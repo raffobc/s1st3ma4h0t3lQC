@@ -1,0 +1,73 @@
+<?php include BASE_PATH . "/views/hotel/_header.php"; ?>
+
+<div class="page-header">
+    <div>
+        <h1><?= isset($client) ? "✏️ Editar Cliente" : "👤 Nuevo Cliente" ?></h1>
+        <p class="subtitle"><?= isset($client) ? "Actualiza la información del cliente" : "Registra un nuevo cliente" ?></p>
+    </div>
+    <a href="<?= BASE_URL ?>/hotel/clientes" class="btn-secondary">← Volver</a>
+</div>
+
+<div class="card">
+    <form method="POST" class="form-container">
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Nombre Completo *</label>
+                <input type="text" name="nombre" class="form-control" required placeholder="Juan Pérez García"
+                       value="<?= htmlspecialchars($client['nombre'] ?? '') ?>">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Documento de Identidad *</label>
+                <input type="text" name="documento" class="form-control" required placeholder="DNI, Pasaporte"
+                       value="<?= htmlspecialchars($client['documento'] ?? '') ?>">
+            </div>
+        </div>
+        
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Email *</label>
+                <input type="email" name="email" class="form-control" required placeholder="cliente@email.com"
+                       value="<?= htmlspecialchars($client['email'] ?? '') ?>">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Teléfono *</label>
+                <input type="tel" name="telefono" class="form-control" required placeholder="+51 999 999 999"
+                       value="<?= htmlspecialchars($client['telefono'] ?? '') ?>">
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Ciudad</label>
+                <input type="text" name="ciudad" class="form-control" placeholder="Lima"
+                       value="<?= htmlspecialchars($client['ciudad'] ?? '') ?>">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">País</label>
+                <input type="text" name="pais" class="form-control" placeholder="Perú"
+                       value="<?= htmlspecialchars($client['pais'] ?? '') ?>">
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn-primary"><?= isset($client) ? '💾 Actualizar Cliente' : '✨ Registrar Cliente' ?></button>
+            <a href="<?= BASE_URL ?>/hotel/clientes" class="btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<style>
+.form-container { padding: 30px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+.form-group { margin-bottom: 20px; }
+.form-label { display: block; margin-bottom: 8px; font-weight: 600; color: #374151; font-size: 14px; }
+.form-control { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 15px; }
+.form-control:focus { outline: none; border-color: #667eea; }
+.form-actions { display: flex; gap: 15px; margin-top: 30px; padding-top: 30px; border-top: 2px solid #e5e7eb; }
+.btn-secondary { padding: 12px 24px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 14px; display: inline-block; }
+</style>
+
+<?php include BASE_PATH . "/views/hotel/_footer.php"; ?>
