@@ -106,3 +106,15 @@ Proyecto en modo demo/MVP, listo para pruebas funcionales y presentación.
 ## Licencia
 
 Este proyecto está bajo licencia MIT. Revisa el archivo LICENSE.
+
+## Deploy gratis y permanente
+
+Este proyecto puede publicarse en InfinityFree (PHP + MySQL) con URL pública permanente.
+
+Guía completa:
+
+- DEPLOY_INFINITYFREE.md
+
+Incluye workflow de GitHub Actions para deploy automático por FTP:
+
+- .github/workflows/deploy-infinityfree.yml
