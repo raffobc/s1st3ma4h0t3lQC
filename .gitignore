@@ -24,6 +24,7 @@ node_modules/
 # Database local artifacts
 *.sqlite
 *.sqlite3
+config/storage/*.db
 
 # Temporary files
 *.tmp
