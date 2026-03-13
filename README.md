@@ -1,29 +1,83 @@
-# Sistema Hotel - Instrucciones de Uso
+# Sistema Hotel Demo
 
-## Configuración actual
+Demo funcional de un sistema de gestión hotelera en PHP + MySQL, pensado para ejecutar en entorno local con XAMPP.
 
-El sistema está configurado para usar MySQL en XAMPP.
+## Stack
 
-## Acceso al sistema
+- PHP 8+
+- MySQL (XAMPP)
+- HTML/CSS/JS
+- Arquitectura simple MVC (controllers, models, views)
 
-- URL Hotel Admin: http://localhost/hotel-system/public/hotel/login
-- URL Super Admin: http://localhost/hotel-system/public/super/login
-- Usuario: admin@hotel.com
-- Contraseña: admin123
+## Funcionalidades MVP
+
+- Login de administrador de hotel
+- Dashboard con métricas básicas
+- Gestión de habitaciones (listar, crear, editar, eliminar)
+- Gestión de clientes (listar, crear, editar, eliminar)
+- Gestión de reservas (crear, check-in, check-out, cancelación)
+- Calendario de ocupación por habitación (vista mensual)
 
 ## Requisitos
 
-- Apache activo en XAMPP
-- MySQL activo en XAMPP
-- PHP 8+
+- XAMPP con Apache y MySQL activos
+- PHP 8 o superior
+- Git (opcional, para clonar)
 
-## Inicialización rápida
+## Instalación rápida
 
-1. Ejecutar: php create_db_mysql.php
-2. Verificar: php check_system.php
-3. Abrir la URL de acceso en navegador
+1. Clona o descarga el proyecto en htdocs:
 
-## Notas
+```bash
+cd c:\xampp\htdocs
+git clone https://github.com/raffobc/s1st3ma4h0t3lQC.git hotel-system
+```
 
-- El sistema usa la base de datos hotel_master.
-- La configuración está en config/config.php y config/MasterDatabase.php.
+2. Entra al proyecto y crea la base de datos demo:
+
+```bash
+cd c:\xampp\htdocs\hotel-system
+php create_db_mysql.php
+```
+
+3. Verifica el estado del sistema:
+
+```bash
+php check_system.php
+```
+
+4. Abre en navegador:
+
+- Admin Hotel: http://localhost/hotel-system/public/hotel/login
+- Super Admin: http://localhost/hotel-system/public/super/login
+
+## Credenciales de demo
+
+- Usuario: admin@hotel.com
+- Contraseña: admin123
+
+## Rutas principales
+
+- Dashboard: http://localhost/hotel-system/public/hotel/dashboard
+- Habitaciones: http://localhost/hotel-system/public/hotel/habitaciones
+- Reservas: http://localhost/hotel-system/public/hotel/reservas
+- Clientes: http://localhost/hotel-system/public/hotel/clientes
+- Calendario: http://localhost/hotel-system/public/hotel/calendario
+
+## Estructura del proyecto
+
+- Configuración: config
+- Controladores: controllers
+- Modelos: models
+- Vistas: views
+- Front controller: public/index.php
+
+## Troubleshooting
+
+- Error de conexión MySQL: verifica que MySQL esté iniciado en XAMPP.
+- Página no carga: confirma que Apache esté activo y la URL incluya /hotel-system/public.
+- Base incompleta: vuelve a ejecutar php create_db_mysql.php.
+
+## Estado
+
+Proyecto en modo demo/MVP, listo para pruebas funcionales y presentación.
