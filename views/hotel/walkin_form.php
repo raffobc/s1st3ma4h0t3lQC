@@ -131,7 +131,11 @@
                                 <select name="cliente_id" id="clienteExistente" class="form-control">
                                     <option value="">Buscar cliente...</option>
                                     <?php foreach ($clientes as $cliente): ?>
-                                        <option value="<?= $cliente['id'] ?>">
+                                        <option value="<?= $cliente['id'] ?>"
+                                                data-nombre="<?= htmlspecialchars($cliente['nombre'], ENT_QUOTES, 'UTF-8') ?>"
+                                                data-documento="<?= htmlspecialchars($cliente['documento'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                                                data-telefono="<?= htmlspecialchars($cliente['telefono'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                                                data-email="<?= htmlspecialchars($cliente['email'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                                             <?= htmlspecialchars($cliente['nombre']) ?> - <?= htmlspecialchars($cliente['documento']) ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -675,6 +679,52 @@ function toggleClienteForm() {
         document.getElementById('clienteDocumento').required = false;
         document.getElementById('clienteExistente').required = true;
     }
+
+    syncTitularFromCliente();
+}
+
+function setTitularData(datos = {}) {
+    const titularNombre = document.querySelector('input[name="huespedes[0][nombre]"]');
+    const titularDocumento = document.querySelector('input[name="huespedes[0][documento]"]');
+    const titularTelefono = document.querySelector('input[name="huespedes[0][telefono]"]');
+    const titularEmail = document.querySelector('input[name="huespedes[0][email]"]');
+
+    if (!titularNombre || !titularDocumento || !titularTelefono || !titularEmail) {
+        return;
+    }
+
+    titularNombre.value = datos.nombre || '';
+    titularDocumento.value = datos.documento || '';
+    titularTelefono.value = datos.telefono || '';
+    titularEmail.value = datos.email || '';
+}
+
+function syncTitularFromCliente() {
+    const tipo = document.getElementById('clienteTipo')?.value;
+
+    if (tipo === 'existing') {
+        const select = document.getElementById('clienteExistente');
+        const selected = select?.selectedOptions?.[0];
+        if (!selected || !selected.value) {
+            setTitularData({});
+            return;
+        }
+
+        setTitularData({
+            nombre: selected.dataset.nombre || '',
+            documento: selected.dataset.documento || '',
+            telefono: selected.dataset.telefono || '',
+            email: selected.dataset.email || ''
+        });
+        return;
+    }
+
+    setTitularData({
+        nombre: document.getElementById('clienteNombre')?.value || '',
+        documento: document.getElementById('clienteDocumento')?.value || '',
+        telefono: document.querySelector('input[name="cliente_telefono"]')?.value || '',
+        email: document.querySelector('input[name="cliente_email"]')?.value || ''
+    });
 }
 
 function agregarHuespedWalkin(esTitular = false, datos = {}) {
@@ -776,6 +826,13 @@ document.addEventListener('DOMContentLoaded', function() {
     for (let i = 1; i < numHuespedes; i++) {
         agregarHuespedWalkin(false);
     }
+
+    document.getElementById('clienteExistente')?.addEventListener('change', syncTitularFromCliente);
+    document.getElementById('clienteNombre')?.addEventListener('input', syncTitularFromCliente);
+    document.getElementById('clienteDocumento')?.addEventListener('input', syncTitularFromCliente);
+    document.querySelector('input[name="cliente_telefono"]')?.addEventListener('input', syncTitularFromCliente);
+    document.querySelector('input[name="cliente_email"]')?.addEventListener('input', syncTitularFromCliente);
+    syncTitularFromCliente();
     
     // Calcular precio
     const habitaciones = document.querySelectorAll('input[name="habitacion_id"]');
