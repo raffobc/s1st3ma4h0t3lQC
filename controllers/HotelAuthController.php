@@ -3,15 +3,7 @@ class HotelAuthController {
     private PDO $db;
 
     public function __construct() {
-        $this->db = new PDO(
-            "mysql:host=localhost;dbname=hotel_master;charset=utf8mb4",
-            'root',
-            '',
-            [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            ]
-        );
+        $this->db = MasterDatabase::getConnection();
     }
     
     public function login(): void {

@@ -1,10 +1,9 @@
 <?php
 // Crear base de datos y tablas en MySQL
-$pdo = new PDO('mysql:host=localhost', 'root', '');
+require_once __DIR__ . '/config/config.php';
+require_once __DIR__ . '/config/MasterDatabase.php';
 
-// Crear base de datos
-$pdo->exec("CREATE DATABASE IF NOT EXISTS hotel_master");
-$pdo->exec("USE hotel_master");
+$pdo = MasterDatabase::getConnection();
 
 // Crear tabla usuarios
 $pdo->exec("
