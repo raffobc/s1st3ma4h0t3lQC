@@ -144,7 +144,7 @@
                         </div>
                         
                         <div id="clienteNuevoDiv">
-                            <input type="hidden" name="cliente_id" value="new">
+                            <input type="hidden" name="cliente_id" id="clienteIdNuevoFlag" value="new">
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label class="form-label">Nombre Completo *</label>
@@ -156,6 +156,7 @@
                                     <label class="form-label">Documento *</label>
                                     <input type="text" name="cliente_documento" id="clienteDocumento" 
                                            class="form-control" placeholder="DNI o Pasaporte">
+                                    <small id="clienteDocumentoWalkinHint" style="display:block; margin-top:6px; color:#6b7280;"></small>
                                 </div>
                             </div>
                             
@@ -691,6 +692,7 @@ function toggleClienteForm() {
     const tipo = document.getElementById('clienteTipo').value;
     const nuevoDiv = document.getElementById('clienteNuevoDiv');
     const existenteDiv = document.getElementById('clienteExistenteDiv');
+    const nuevoFlag = document.getElementById('clienteIdNuevoFlag');
     
     if (tipo === 'new') {
         nuevoDiv.style.display = 'block';
@@ -698,15 +700,70 @@ function toggleClienteForm() {
         document.getElementById('clienteNombre').required = true;
         document.getElementById('clienteDocumento').required = true;
         document.getElementById('clienteExistente').required = false;
+        if (nuevoFlag) nuevoFlag.disabled = false;
     } else {
         nuevoDiv.style.display = 'none';
         existenteDiv.style.display = 'block';
         document.getElementById('clienteNombre').required = false;
         document.getElementById('clienteDocumento').required = false;
         document.getElementById('clienteExistente').required = true;
+        if (nuevoFlag) nuevoFlag.disabled = true;
     }
 
     syncTitularFromCliente();
+}
+
+function setWalkinDocumentoHint(message, ok = false) {
+    const hint = document.getElementById('clienteDocumentoWalkinHint');
+    if (!hint) return;
+    hint.textContent = message || '';
+    hint.style.color = ok ? '#059669' : '#6b7280';
+}
+
+function buscarClientePorDocumentoWalkin() {
+    const documentoInput = document.getElementById('clienteDocumento');
+    const clienteTipo = document.getElementById('clienteTipo');
+    const clienteSelect = document.getElementById('clienteExistente');
+
+    if (!documentoInput || !clienteTipo || !clienteSelect || clienteTipo.value !== 'new') {
+        return;
+    }
+
+    const documento = documentoInput.value.trim();
+    if (documento.length < 6) {
+        setWalkinDocumentoHint('');
+        return;
+    }
+
+    fetch('<?= BASE_URL ?>/hotel/clientes/find-by-document?documento=' + encodeURIComponent(documento))
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success || !data.found || !data.cliente) {
+                setWalkinDocumentoHint('No se encontró cliente con este documento.');
+                return;
+            }
+
+            let option = clienteSelect.querySelector(`option[value="${data.cliente.id}"]`);
+            if (!option) {
+                option = document.createElement('option');
+                option.value = data.cliente.id;
+                option.textContent = `${data.cliente.nombre} - ${data.cliente.documento}`;
+                option.dataset.nombre = data.cliente.nombre || '';
+                option.dataset.documento = data.cliente.documento || '';
+                option.dataset.telefono = data.cliente.telefono || '';
+                option.dataset.email = data.cliente.email || '';
+                clienteSelect.appendChild(option);
+            }
+
+            clienteTipo.value = 'existing';
+            toggleClienteForm();
+            clienteSelect.value = String(data.cliente.id);
+            syncTitularFromCliente();
+            setWalkinDocumentoHint('Cliente encontrado y cargado automáticamente.', true);
+        })
+        .catch(() => {
+            setWalkinDocumentoHint('No se pudo validar el documento ahora.');
+        });
 }
 
 function setTitularData(datos = {}) {
@@ -941,6 +998,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('clienteExistente')?.addEventListener('change', syncTitularFromCliente);
     document.getElementById('clienteNombre')?.addEventListener('input', syncTitularFromCliente);
     document.getElementById('clienteDocumento')?.addEventListener('input', syncTitularFromCliente);
+    document.getElementById('clienteDocumento')?.addEventListener('blur', buscarClientePorDocumentoWalkin);
     document.querySelector('input[name="cliente_telefono"]')?.addEventListener('input', syncTitularFromCliente);
     document.querySelector('input[name="cliente_email"]')?.addEventListener('input', syncTitularFromCliente);
     syncTitularFromCliente();

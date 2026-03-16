@@ -498,6 +498,7 @@ include BASE_PATH . "/views/hotel/_header.php";
                             <label class="form-label">Documento *</label>
                             <input type="text" name="documento" id="clienteDocumento" class="form-control" 
                                    required placeholder="DNI, Pasaporte">
+                            <small id="clienteDocumentoHint" class="form-help"></small>
                         </div>
                     </div>
                     
@@ -675,6 +676,8 @@ include BASE_PATH . "/views/hotel/_header.php";
 </style>
 
 <script>
+let clienteEncontradoPorDni = null;
+
 function abrirModalCliente() {
     document.getElementById('clientModal').style.display = 'block';
     document.getElementById('clienteNombre').focus();
@@ -683,10 +686,73 @@ function abrirModalCliente() {
 function cerrarModalCliente() {
     document.getElementById('clientModal').style.display = 'none';
     document.getElementById('clientForm').reset();
+    clienteEncontradoPorDni = null;
+    const hint = document.getElementById('clienteDocumentoHint');
+    if (hint) {
+        hint.textContent = '';
+        hint.style.color = '#6b7280';
+    }
+}
+
+function setDocumentoHint(message, ok = false) {
+    const hint = document.getElementById('clienteDocumentoHint');
+    if (!hint) return;
+    hint.textContent = message || '';
+    hint.style.color = ok ? '#059669' : '#6b7280';
+}
+
+function buscarClientePorDocumentoReserva() {
+    const documentoInput = document.getElementById('clienteDocumento');
+    if (!documentoInput) return;
+
+    const documento = documentoInput.value.trim();
+    if (documento.length < 6) {
+        clienteEncontradoPorDni = null;
+        setDocumentoHint('');
+        return;
+    }
+
+    fetch('<?= BASE_URL ?>/hotel/clientes/find-by-document?documento=' + encodeURIComponent(documento))
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success || !data.found || !data.cliente) {
+                clienteEncontradoPorDni = null;
+                setDocumentoHint('No se encontró cliente con este documento.');
+                return;
+            }
+
+            clienteEncontradoPorDni = data.cliente;
+            document.getElementById('clienteNombre').value = data.cliente.nombre || '';
+            document.getElementById('clienteEmail').value = data.cliente.email || '';
+            document.getElementById('clienteTelefono').value = data.cliente.telefono || '';
+            setDocumentoHint('Cliente encontrado. Se usará el registro existente.', true);
+        })
+        .catch(() => {
+            clienteEncontradoPorDni = null;
+            setDocumentoHint('No se pudo validar el documento ahora.');
+        });
 }
 
 function guardarCliente(event) {
     event.preventDefault();
+
+    if (clienteEncontradoPorDni && clienteEncontradoPorDni.id) {
+        const clienteSelect = document.querySelector('select[name="cliente_id"]');
+        if (clienteSelect) {
+            let option = clienteSelect.querySelector(`option[value="${clienteEncontradoPorDni.id}"]`);
+            if (!option) {
+                option = document.createElement('option');
+                option.value = clienteEncontradoPorDni.id;
+                option.textContent = `${clienteEncontradoPorDni.nombre} - ${clienteEncontradoPorDni.documento}`;
+                clienteSelect.appendChild(option);
+            }
+            clienteSelect.value = String(clienteEncontradoPorDni.id);
+        }
+
+        mostrarNotificacion('Cliente existente cargado por DNI', 'success');
+        cerrarModalCliente();
+        return;
+    }
     
     const form = event.target;
     const formData = new FormData(form);
@@ -763,6 +829,11 @@ window.onclick = function(event) {
     if (event.target === modal) {
         cerrarModalCliente();
     }
+}
+
+const clienteDocumentoInput = document.getElementById('clienteDocumento');
+if (clienteDocumentoInput) {
+    clienteDocumentoInput.addEventListener('blur', buscarClientePorDocumentoReserva);
 }
 
 // Animaciones

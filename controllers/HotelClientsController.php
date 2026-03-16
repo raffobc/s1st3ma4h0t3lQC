@@ -123,6 +123,30 @@ class HotelClientsController {
         
         require_once BASE_PATH . "/views/hotel/client_form.php";
     }
+
+    public function findByDocument() {
+        header('Content-Type: application/json');
+
+        $documento = trim($_GET['documento'] ?? '');
+        if ($documento === '') {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Documento requerido.'
+            ]);
+            exit;
+        }
+
+        $stmt = $this->hotelDb->prepare("SELECT id, nombre, documento, email, telefono, ciudad, pais FROM clientes WHERE documento = ? LIMIT 1");
+        $stmt->execute([$documento]);
+        $client = $stmt->fetch();
+
+        echo json_encode([
+            'success' => true,
+            'found' => (bool)$client,
+            'cliente' => $client ?: null
+        ]);
+        exit;
+    }
     
     public function view() {
         $id = $_GET["id"] ?? 0;

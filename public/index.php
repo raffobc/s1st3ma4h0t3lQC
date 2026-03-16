@@ -103,6 +103,8 @@ if ($accessType === "super") {
         
         if ($subAction === "create") {
             $controller->create();
+        } elseif ($subAction === "find-by-document") {
+            $controller->findByDocument();
         } elseif ($subAction === "view") {
             $controller->view();
         } elseif ($subAction === "edit") {
