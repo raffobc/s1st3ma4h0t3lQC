@@ -12,6 +12,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Generate production config
+        run: |
+          cat > config/config.php << 'EOF'
+          <?php
+          define('BASE_PATH', dirname(__DIR__));
+          define('BASE_URL', rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/'));
+          define('MASTER_DB_HOST', '${{ secrets.DB_HOST }}');
+          define('MASTER_DB_NAME', '${{ secrets.DB_NAME }}');
+          define('MASTER_DB_USER', '${{ secrets.DB_USER }}');
+          define('MASTER_DB_PASS', '${{ secrets.DB_PASS }}');
+          date_default_timezone_set('America/Lima');
+          error_reporting(0);
+          ini_set('display_errors', '0');
+          ?>
+          EOF
+
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
