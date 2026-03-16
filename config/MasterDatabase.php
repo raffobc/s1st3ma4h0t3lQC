@@ -5,9 +5,9 @@ class MasterDatabase {
     public static function getConnection(): PDO {
         if (self::$instance === null) {
             self::$instance = new PDO(
-                "mysql:host=localhost;dbname=hotel_master;charset=utf8mb4",
-                'root',
-                '',
+                "mysql:host=" . MASTER_DB_HOST . ";dbname=" . MASTER_DB_NAME . ";charset=utf8mb4",
+                MASTER_DB_USER,
+                MASTER_DB_PASS,
                 [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
