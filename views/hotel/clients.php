@@ -140,6 +140,11 @@
             color: #065f46;
             border: 1px solid #a7f3d0;
         }
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
 
         /* Card */
         .card {
@@ -338,8 +343,12 @@
             <a href="<?= BASE_URL ?>/hotel/clientes/create" class="btn-primary">+ Nuevo Cliente</a>
         </div>
 
-        <?php if (isset($_GET['success'])): ?>
+        <?php if (isset($_GET['success']) && $_GET['success'] === '1'): ?>
             <div class="alert alert-success">✅ Cliente actualizado exitosamente</div>
+        <?php elseif (isset($_GET['success']) && $_GET['success'] === 'created'): ?>
+            <div class="alert alert-success">✅ Cliente registrado exitosamente</div>
+        <?php elseif (isset($_GET['error']) && $_GET['error'] === 'duplicate'): ?>
+            <div class="alert alert-error">❌ Ya existe un cliente con ese documento</div>
         <?php endif; ?>
 
         <div class="card">

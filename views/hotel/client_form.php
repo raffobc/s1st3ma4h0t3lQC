@@ -9,6 +9,20 @@
 </div>
 
 <div class="card">
+    <?php if (isset($_GET['error']) && $_GET['error'] === 'duplicate'): ?>
+        <div class="alert alert-error" style="margin: 20px 20px 0 20px;">
+            ❌ Ya existe un cliente con ese documento.
+        </div>
+    <?php elseif (isset($_GET['error']) && $_GET['error'] === 'required'): ?>
+        <div class="alert alert-error" style="margin: 20px 20px 0 20px;">
+            ❌ Completa nombre y documento para continuar.
+        </div>
+    <?php elseif (isset($_GET['error']) && $_GET['error'] === 'save'): ?>
+        <div class="alert alert-error" style="margin: 20px 20px 0 20px;">
+            ❌ No se pudo registrar el cliente. Intenta nuevamente.
+        </div>
+    <?php endif; ?>
+
     <form method="POST" class="form-container">
         <div class="form-grid">
             <div class="form-group">
@@ -68,6 +82,8 @@
 .form-control:focus { outline: none; border-color: #667eea; }
 .form-actions { display: flex; gap: 15px; margin-top: 30px; padding-top: 30px; border-top: 2px solid #e5e7eb; }
 .btn-secondary { padding: 12px 24px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 14px; display: inline-block; }
+.alert { padding: 14px 18px; border-radius: 10px; font-weight: 600; }
+.alert-error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
 </style>
 
 <?php include BASE_PATH . "/views/hotel/_footer.php"; ?>

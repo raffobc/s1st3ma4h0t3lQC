@@ -46,38 +46,79 @@ class HotelClientsController {
     
     public function create() {
         if ($_SERVER["REQUEST_METHOD"] === "POST") {
-            $stmt = $this->hotelDb->prepare("
-                INSERT INTO clientes (nombre, documento, email, telefono, ciudad, pais)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ");
-            
-            $stmt->execute([
-                $_POST["nombre"],
-                $_POST["documento"],
-                $_POST["email"],
-                $_POST["telefono"],
-                $_POST["ciudad"] ?? null,
-                $_POST["pais"] ?? null
-            ]);
-            
-            $clienteId = $this->hotelDb->lastInsertId();
-            
-            // Si es una petición AJAX, devolver JSON
-            if (!empty($_POST["ajax"])) {
-                header('Content-Type: application/json');
-                echo json_encode([
-                    'success' => true,
-                    'cliente' => [
-                        'id' => $clienteId,
-                        'nombre' => $_POST["nombre"],
-                        'documento' => $_POST["documento"]
-                    ]
-                ]);
+            $isAjax = !empty($_POST["ajax"]);
+
+            $nombre = trim($_POST["nombre"] ?? "");
+            $documento = trim($_POST["documento"] ?? "");
+            $email = trim($_POST["email"] ?? "");
+            $telefono = trim($_POST["telefono"] ?? "");
+            $ciudad = trim($_POST["ciudad"] ?? "");
+            $pais = trim($_POST["pais"] ?? "");
+
+            if ($nombre === "" || $documento === "") {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Nombre y documento son obligatorios.'
+                    ]);
+                    exit;
+                }
+
+                header("Location: " . BASE_URL . "/hotel/clientes/create?error=required");
                 exit;
             }
-            
-            header("Location: " . BASE_URL . "/hotel/clientes");
-            exit;
+
+            try {
+                $stmt = $this->hotelDb->prepare(" 
+                    INSERT INTO clientes (nombre, documento, email, telefono, ciudad, pais)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ");
+                
+                $stmt->execute([
+                    $nombre,
+                    $documento,
+                    $email !== "" ? $email : null,
+                    $telefono !== "" ? $telefono : null,
+                    $ciudad !== "" ? $ciudad : null,
+                    $pais !== "" ? $pais : null
+                ]);
+
+                $clienteId = $this->hotelDb->lastInsertId();
+                
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => true,
+                        'cliente' => [
+                            'id' => $clienteId,
+                            'nombre' => $nombre,
+                            'documento' => $documento
+                        ]
+                    ]);
+                    exit;
+                }
+
+                header("Location: " . BASE_URL . "/hotel/clientes?success=created");
+                exit;
+            } catch (PDOException $e) {
+                $isDuplicate = ($e->getCode() === '23000');
+                $message = $isDuplicate
+                    ? 'Ya existe un cliente con ese documento.'
+                    : 'No se pudo registrar el cliente.';
+
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => false,
+                        'message' => $message
+                    ]);
+                    exit;
+                }
+
+                header("Location: " . BASE_URL . "/hotel/clientes/create?error=" . ($isDuplicate ? "duplicate" : "save"));
+                exit;
+            }
         }
         
         require_once BASE_PATH . "/views/hotel/client_form.php";

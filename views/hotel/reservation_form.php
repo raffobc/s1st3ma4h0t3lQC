@@ -697,7 +697,7 @@ function guardarCliente(event) {
     btn.disabled = true;
     btn.textContent = 'Guardando';
     
-    fetch('/hotel/clientes/create', {
+    fetch('<?= BASE_URL ?>/hotel/clientes/create', {
         method: 'POST',
         body: formData
     })
@@ -718,7 +718,7 @@ function guardarCliente(event) {
             // Cerrar modal
             cerrarModalCliente();
         } else {
-            mostrarNotificacion('Error al registrar cliente', 'error');
+            mostrarNotificacion(data.message || 'Error al registrar cliente', 'error');
         }
     })
     .catch(error => {
