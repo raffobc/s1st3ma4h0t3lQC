@@ -725,7 +725,12 @@ function buscarClientePorDocumentoReserva() {
             document.getElementById('clienteNombre').value = data.cliente.nombre || '';
             document.getElementById('clienteEmail').value = data.cliente.email || '';
             document.getElementById('clienteTelefono').value = data.cliente.telefono || '';
-            setDocumentoHint('Cliente encontrado. Se usará el registro existente.', true);
+
+            if (data.source === 'local' && data.cliente.id) {
+                setDocumentoHint('Cliente encontrado en la base local. Se usará el registro existente.', true);
+            } else {
+                setDocumentoHint('Datos cargados desde RENIEC. Puedes completar y registrar el cliente.', true);
+            }
         })
         .catch(() => {
             clienteEncontradoPorDni = null;

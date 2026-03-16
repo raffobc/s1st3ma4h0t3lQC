@@ -743,23 +743,32 @@ function buscarClientePorDocumentoWalkin() {
                 return;
             }
 
-            let option = clienteSelect.querySelector(`option[value="${data.cliente.id}"]`);
-            if (!option) {
-                option = document.createElement('option');
-                option.value = data.cliente.id;
-                option.textContent = `${data.cliente.nombre} - ${data.cliente.documento}`;
-                option.dataset.nombre = data.cliente.nombre || '';
-                option.dataset.documento = data.cliente.documento || '';
-                option.dataset.telefono = data.cliente.telefono || '';
-                option.dataset.email = data.cliente.email || '';
-                clienteSelect.appendChild(option);
+            if (data.source === 'local' && data.cliente.id) {
+                let option = clienteSelect.querySelector(`option[value="${data.cliente.id}"]`);
+                if (!option) {
+                    option = document.createElement('option');
+                    option.value = data.cliente.id;
+                    option.textContent = `${data.cliente.nombre} - ${data.cliente.documento}`;
+                    option.dataset.nombre = data.cliente.nombre || '';
+                    option.dataset.documento = data.cliente.documento || '';
+                    option.dataset.telefono = data.cliente.telefono || '';
+                    option.dataset.email = data.cliente.email || '';
+                    clienteSelect.appendChild(option);
+                }
+
+                clienteTipo.value = 'existing';
+                toggleClienteForm();
+                clienteSelect.value = String(data.cliente.id);
+                syncTitularFromCliente();
+                setWalkinDocumentoHint('Cliente local encontrado y cargado automáticamente.', true);
+                return;
             }
 
-            clienteTipo.value = 'existing';
-            toggleClienteForm();
-            clienteSelect.value = String(data.cliente.id);
+            document.getElementById('clienteNombre').value = data.cliente.nombre || '';
+            document.querySelector('input[name="cliente_email"]').value = data.cliente.email || '';
+            document.querySelector('input[name="cliente_telefono"]').value = data.cliente.telefono || '';
             syncTitularFromCliente();
-            setWalkinDocumentoHint('Cliente encontrado y cargado automáticamente.', true);
+            setWalkinDocumentoHint('Datos cargados desde RENIEC. Completa y continúa con el registro.', true);
         })
         .catch(() => {
             setWalkinDocumentoHint('No se pudo validar el documento ahora.');

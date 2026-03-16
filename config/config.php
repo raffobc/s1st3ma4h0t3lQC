@@ -5,6 +5,8 @@ define('MASTER_DB_HOST', getenv('DB_HOST') ?: 'localhost');
 define('MASTER_DB_NAME', getenv('DB_NAME') ?: 'hotel_master');
 define('MASTER_DB_USER', getenv('DB_USER') ?: 'root');
 define('MASTER_DB_PASS', getenv('DB_PASS') ?: '');
+define('APIPERU_BASE_URL', rtrim(getenv('APIPERU_BASE_URL') ?: 'https://dniruc.apisperu.com/api/v1', '/'));
+define('APIPERU_TOKEN', getenv('APIPERU_TOKEN') ?: '');
 date_default_timezone_set('America/Lima');
 $isProd = (getenv('APP_ENV') === 'production');
 error_reporting($isProd ? 0 : E_ALL);

@@ -140,12 +140,103 @@ class HotelClientsController {
         $stmt->execute([$documento]);
         $client = $stmt->fetch();
 
+        if ($client) {
+            echo json_encode([
+                'success' => true,
+                'found' => true,
+                'source' => 'local',
+                'cliente' => $client
+            ]);
+            exit;
+        }
+
+        $dni = preg_replace('/\D+/', '', $documento);
+        if (strlen($dni) === 8 && APIPERU_TOKEN !== '') {
+            $apiData = $this->lookupDniFromApi($dni);
+            if ($apiData) {
+                echo json_encode([
+                    'success' => true,
+                    'found' => true,
+                    'source' => 'api',
+                    'cliente' => [
+                        'id' => null,
+                        'nombre' => $apiData['nombre'],
+                        'documento' => $dni,
+                        'email' => null,
+                        'telefono' => null,
+                        'ciudad' => null,
+                        'pais' => 'Peru'
+                    ]
+                ]);
+                exit;
+            }
+        }
+
         echo json_encode([
             'success' => true,
-            'found' => (bool)$client,
-            'cliente' => $client ?: null
+            'found' => false,
+            'source' => null,
+            'cliente' => null
         ]);
         exit;
+    }
+
+    private function lookupDniFromApi(string $dni): ?array {
+        $url = APIPERU_BASE_URL . '/dni/' . urlencode($dni) . '?token=' . urlencode(APIPERU_TOKEN);
+
+        $response = null;
+        $httpCode = 0;
+
+        if (function_exists('curl_init')) {
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 12,
+                CURLOPT_CONNECTTIMEOUT => 6,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_HTTPGET => true,
+                CURLOPT_HTTPHEADER => ['Accept: application/json']
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+        } else {
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'GET',
+                    'header' => "Accept: application/json\r\n",
+                    'timeout' => 12,
+                ],
+            ]);
+            $response = @file_get_contents($url, false, $context);
+            $httpCode = $response !== false ? 200 : 0;
+        }
+
+        if (!$response || $httpCode < 200 || $httpCode >= 300) {
+            return null;
+        }
+
+        $data = json_decode($response, true);
+        if (!is_array($data)) {
+            return null;
+        }
+
+        $nombreCompleto = trim((string)($data['nombre_completo'] ?? ''));
+        if ($nombreCompleto === '') {
+            $nombres = trim((string)($data['nombres'] ?? ''));
+            $apellidoPaterno = trim((string)($data['apellidoPaterno'] ?? ''));
+            $apellidoMaterno = trim((string)($data['apellidoMaterno'] ?? ''));
+            $nombreCompleto = trim($nombres . ' ' . $apellidoPaterno . ' ' . $apellidoMaterno);
+        }
+
+        if ($nombreCompleto === '') {
+            return null;
+        }
+
+        return [
+            'nombre' => $nombreCompleto
+        ];
     }
     
     public function view() {
