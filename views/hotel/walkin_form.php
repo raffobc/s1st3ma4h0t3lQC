@@ -594,6 +594,14 @@
     gap: 15px;
 }
 
+.huesped-source {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 15px;
+}
+
 .form-actions {
     display: flex;
     gap: 15px;
@@ -660,6 +668,24 @@
 
 <script>
 let contadorHuespedesWalkin = 0;
+const clientesDB = <?= json_encode(array_map(function ($cliente) {
+    return [
+        'id' => (int)($cliente['id'] ?? 0),
+        'nombre' => (string)($cliente['nombre'] ?? ''),
+        'documento' => (string)($cliente['documento'] ?? ''),
+        'telefono' => (string)($cliente['telefono'] ?? ''),
+        'email' => (string)($cliente['email'] ?? ''),
+    ];
+}, $clientes ?? []), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 
 function toggleClienteForm() {
     const tipo = document.getElementById('clienteTipo').value;
@@ -741,6 +767,30 @@ function agregarHuespedWalkin(esTitular = false, datos = {}) {
                 </div>
                 ${!esTitular ? `<button type="button" onclick="eliminarHuespedWalkin(${index})" class="btn-remove">✕ Eliminar</button>` : ''}
             </div>
+            ${!esTitular ? `
+            <div class="huesped-source">
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Origen de datos</label>
+                        <select class="form-control" onchange="cambiarModoCargaHuesped(${index}, this.value)">
+                            <option value="new">Registrar datos nuevos</option>
+                            <option value="db">Buscar en base de datos</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="huesped-db-search-wrap-${index}" style="display:none;">
+                        <label class="form-label">Buscar cliente</label>
+                        <input type="text" id="huesped-db-search-${index}" class="form-control"
+                               placeholder="Nombre o documento" oninput="filtrarClientesDB(${index})">
+                    </div>
+                </div>
+                <div class="form-group" id="huesped-db-select-wrap-${index}" style="display:none; margin-bottom: 0;">
+                    <label class="form-label">Resultado</label>
+                    <select id="huesped-db-select-${index}" class="form-control" onchange="aplicarClienteDBAHuesped(${index})">
+                        <option value="">Selecciona cliente...</option>
+                    </select>
+                </div>
+            </div>
+            ` : ''}
             
             <div class="form-grid-2">
                 <div class="form-group">
@@ -807,6 +857,67 @@ function agregarHuespedWalkin(esTitular = false, datos = {}) {
     `;
     
     container.insertAdjacentHTML('beforeend', huespedHTML);
+
+    if (!esTitular) {
+        renderClientesDB(index);
+    }
+}
+
+function renderClientesDB(index, filtro = '') {
+    const select = document.getElementById(`huesped-db-select-${index}`);
+    if (!select) return;
+
+    const texto = (filtro || '').trim().toLowerCase();
+    const filtrados = texto
+        ? clientesDB.filter(c =>
+            (c.nombre || '').toLowerCase().includes(texto) ||
+            (c.documento || '').toLowerCase().includes(texto)
+        )
+        : clientesDB;
+
+    const options = filtrados.map(c =>
+        `<option value="${c.id}">${escapeHtml(c.nombre)} - ${escapeHtml(c.documento || 'Sin documento')}</option>`
+    ).join('');
+
+    select.innerHTML = '<option value="">Selecciona cliente...</option>' + options;
+}
+
+function cambiarModoCargaHuesped(index, modo) {
+    const searchWrap = document.getElementById(`huesped-db-search-wrap-${index}`);
+    const selectWrap = document.getElementById(`huesped-db-select-wrap-${index}`);
+
+    if (!searchWrap || !selectWrap) return;
+
+    const mostrar = modo === 'db';
+    searchWrap.style.display = mostrar ? 'block' : 'none';
+    selectWrap.style.display = mostrar ? 'block' : 'none';
+
+    if (mostrar) {
+        renderClientesDB(index);
+    }
+}
+
+function filtrarClientesDB(index) {
+    const input = document.getElementById(`huesped-db-search-${index}`);
+    renderClientesDB(index, input ? input.value : '');
+}
+
+function aplicarClienteDBAHuesped(index) {
+    const select = document.getElementById(`huesped-db-select-${index}`);
+    if (!select || !select.value) return;
+
+    const cliente = clientesDB.find(c => String(c.id) === String(select.value));
+    if (!cliente) return;
+
+    const nombre = document.querySelector(`input[name="huespedes[${index}][nombre]"]`);
+    const documento = document.querySelector(`input[name="huespedes[${index}][documento]"]`);
+    const telefono = document.querySelector(`input[name="huespedes[${index}][telefono]"]`);
+    const email = document.querySelector(`input[name="huespedes[${index}][email]"]`);
+
+    if (nombre) nombre.value = cliente.nombre || '';
+    if (documento) documento.value = cliente.documento || '';
+    if (telefono) telefono.value = cliente.telefono || '';
+    if (email) email.value = cliente.email || '';
 }
 
 function eliminarHuespedWalkin(index) {
