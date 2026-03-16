@@ -154,19 +154,12 @@ class HotelClientsController {
         if (strlen($dni) === 8 && APIPERU_TOKEN !== '') {
             $apiData = $this->lookupDniFromApi($dni);
             if ($apiData) {
+                $cachedClient = $this->saveApiClientToLocal($dni, $apiData['nombre']);
                 echo json_encode([
                     'success' => true,
                     'found' => true,
-                    'source' => 'api',
-                    'cliente' => [
-                        'id' => null,
-                        'nombre' => $apiData['nombre'],
-                        'documento' => $dni,
-                        'email' => null,
-                        'telefono' => null,
-                        'ciudad' => null,
-                        'pais' => 'Peru'
-                    ]
+                    'source' => 'local',
+                    'cliente' => $cachedClient
                 ]);
                 exit;
             }
@@ -236,6 +229,41 @@ class HotelClientsController {
 
         return [
             'nombre' => $nombreCompleto
+        ];
+    }
+
+    private function saveApiClientToLocal(string $dni, string $nombre): array {
+        // Avoid duplicate records when the same DNI is queried multiple times.
+        $stmt = $this->hotelDb->prepare("SELECT id, nombre, documento, email, telefono, ciudad, pais FROM clientes WHERE documento = ? LIMIT 1");
+        $stmt->execute([$dni]);
+        $existing = $stmt->fetch();
+        if ($existing) {
+            return $existing;
+        }
+
+        try {
+            $stmt = $this->hotelDb->prepare("INSERT INTO clientes (nombre, documento, pais) VALUES (?, ?, ?)");
+            $stmt->execute([$nombre, $dni, 'Peru']);
+        } catch (PDOException $e) {
+            // In case of race condition on UNIQUE(documento), read the existing record.
+        }
+
+        $stmt = $this->hotelDb->prepare("SELECT id, nombre, documento, email, telefono, ciudad, pais FROM clientes WHERE documento = ? LIMIT 1");
+        $stmt->execute([$dni]);
+        $saved = $stmt->fetch();
+
+        if ($saved) {
+            return $saved;
+        }
+
+        return [
+            'id' => null,
+            'nombre' => $nombre,
+            'documento' => $dni,
+            'email' => null,
+            'telefono' => null,
+            'ciudad' => null,
+            'pais' => 'Peru'
         ];
     }
     
