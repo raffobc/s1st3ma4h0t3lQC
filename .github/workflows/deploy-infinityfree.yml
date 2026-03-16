@@ -12,6 +12,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Fix htaccess for production
+        run: sed -i 's|RewriteBase /hotel-system/public/|RewriteBase /public/|' public/.htaccess
+
       - name: Generate production config
         run: |
           cat > config/config.php << 'EOF'
