@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="<?= BASE_URL ?>/css/hotel-admin.css">
 </head>
 <body>
+    <?php $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: ''; ?>
     <nav class="navbar">
         <div class="navbar-brand">
             <div class="navbar-brand-icon">🏨</div>
@@ -17,11 +18,11 @@
         </div>
         
         <div class="navbar-menu">
-            <a href="<?= BASE_URL ?>/hotel/dashboard" class="nav-link">Dashboard</a>
-            <a href="<?= BASE_URL ?>/hotel/habitaciones" class="nav-link">Habitaciones</a>
-            <a href="<?= BASE_URL ?>/hotel/reservas" class="nav-link">Reservas</a>
-            <a href="<?= BASE_URL ?>/hotel/clientes" class="nav-link">Clientes</a>
-            <a href="<?= BASE_URL ?>/hotel/calendario" class="nav-link">Calendario</a>
+            <a href="<?= BASE_URL ?>/hotel/dashboard" class="nav-link<?= strpos($currentPath, '/hotel/dashboard') !== false ? ' active' : '' ?>">Dashboard</a>
+            <a href="<?= BASE_URL ?>/hotel/habitaciones" class="nav-link<?= strpos($currentPath, '/hotel/habitaciones') !== false ? ' active' : '' ?>">Habitaciones</a>
+            <a href="<?= BASE_URL ?>/hotel/reservas" class="nav-link<?= strpos($currentPath, '/hotel/reservas') !== false ? ' active' : '' ?>">Reservas</a>
+            <a href="<?= BASE_URL ?>/hotel/clientes" class="nav-link<?= strpos($currentPath, '/hotel/clientes') !== false ? ' active' : '' ?>">Clientes</a>
+            <a href="<?= BASE_URL ?>/hotel/calendario" class="nav-link<?= strpos($currentPath, '/hotel/calendario') !== false ? ' active' : '' ?>">Calendario</a>
         </div>
         
         <div class="navbar-user">

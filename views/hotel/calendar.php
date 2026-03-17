@@ -1,10 +1,6 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calendario - <?= htmlspecialchars($_SESSION["hotel_name"]) ?></title>
-    <style>
+<?php include BASE_PATH . "/views/hotel/_header.php"; ?>
+
+<style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -174,33 +170,8 @@
             h1 { font-size: 24px; }
         }
     </style>
-</head>
-<body>
-    <nav class="navbar">
-        <div class="navbar-brand">
-            <div class="navbar-brand-icon">🏨</div>
-            <div>
-                <div class="navbar-brand-text"><?= htmlspecialchars($_SESSION["hotel_name"]) ?></div>
-                <div class="navbar-hotel">Panel de Administración</div>
-            </div>
-        </div>
 
-        <div class="navbar-menu">
-            <a href="<?= BASE_URL ?>/hotel/dashboard" class="nav-link">Dashboard</a>
-            <a href="<?= BASE_URL ?>/hotel/habitaciones" class="nav-link">Habitaciones</a>
-            <a href="<?= BASE_URL ?>/hotel/reservas" class="nav-link">Reservas</a>
-            <a href="<?= BASE_URL ?>/hotel/clientes" class="nav-link">Clientes</a>
-            <a href="<?= BASE_URL ?>/hotel/calendario" class="nav-link active">Calendario</a>
-        </div>
-
-        <div class="navbar-user">
-            <span style="font-weight: 600;"><?= htmlspecialchars($_SESSION["hotel_user_name"] ?? 'Usuario') ?></span>
-            <a href="<?= BASE_URL ?>/hotel/password" class="btn-logout" style="background:#2563eb;">Cambiar Clave</a>
-            <a href="<?= BASE_URL ?>/hotel/logout" class="btn-logout">Cerrar Sesión</a>
-        </div>
-    </nav>
-
-    <div class="container">
+<div class="container">
         <div class="dashboard-header">
             <h1>Calendario de Ocupación</h1>
             <p class="subtitle">Vista mensual por habitación con estado de reservas y ocupaciones</p>
@@ -266,5 +237,5 @@
             </table>
         </div>
     </div>
-</body>
-</html>
+
+<?php include BASE_PATH . "/views/hotel/_footer.php"; ?>
