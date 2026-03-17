@@ -702,11 +702,22 @@ function setDocumentoHint(message, ok = false) {
     hint.style.color = ok ? '#059669' : '#6b7280';
 }
 
+function clearClienteModalData() {
+    const nombre = document.getElementById('clienteNombre');
+    const email = document.getElementById('clienteEmail');
+    const telefono = document.getElementById('clienteTelefono');
+    if (nombre) nombre.value = '';
+    if (email) email.value = '';
+    if (telefono) telefono.value = '';
+}
+
 function buscarClientePorDocumentoReserva() {
     const documentoInput = document.getElementById('clienteDocumento');
     if (!documentoInput) return;
 
     const documento = documentoInput.value.trim();
+    clearClienteModalData();
+
     if (documento.length < 6) {
         clienteEncontradoPorDni = null;
         setDocumentoHint('');

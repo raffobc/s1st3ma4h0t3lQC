@@ -92,9 +92,21 @@
 <script>
 document.getElementById('documentoInput').addEventListener('blur', function () {
     const doc = this.value.trim();
-    if (doc.length < 6) return;
-
+    const nombreInput = document.getElementById('nombreInput');
+    const emailInput = document.querySelector('input[name="email"]');
+    const telefonoInput = document.querySelector('input[name="telefono"]');
     const hint = document.getElementById('dniHint');
+
+    // Clear previous DNI result before each new search.
+    if (nombreInput) nombreInput.value = '';
+    if (emailInput) emailInput.value = '';
+    if (telefonoInput) telefonoInput.value = '';
+
+    if (doc.length < 6) {
+        hint.textContent = '';
+        return;
+    }
+
     hint.textContent = 'Buscando...';
     hint.style.color = '#6b7280';
 
@@ -107,12 +119,9 @@ document.getElementById('documentoInput').addEventListener('blur', function () {
                 return;
             }
             const c = data.cliente;
-            const nombreInput = document.getElementById('nombreInput');
-            if (nombreInput && !nombreInput.value) nombreInput.value = c.nombre || '';
-            const emailInput = document.querySelector('input[name="email"]');
-            if (emailInput && !emailInput.value) emailInput.value = c.email || '';
-            const telefonoInput = document.querySelector('input[name="telefono"]');
-            if (telefonoInput && !telefonoInput.value) telefonoInput.value = c.telefono || '';
+            if (nombreInput) nombreInput.value = c.nombre || '';
+            if (emailInput) emailInput.value = c.email || '';
+            if (telefonoInput) telefonoInput.value = c.telefono || '';
             hint.textContent = data.source === 'local'
                 ? '✅ Cliente encontrado en la base de datos local.'
                 : '✅ Datos cargados desde RENIEC. Verifica y completa.';

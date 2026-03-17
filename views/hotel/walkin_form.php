@@ -721,6 +721,16 @@ function setWalkinDocumentoHint(message, ok = false) {
     hint.style.color = ok ? '#059669' : '#6b7280';
 }
 
+function clearWalkinClienteNuevoData() {
+    const nombre = document.getElementById('clienteNombre');
+    const email = document.querySelector('input[name="cliente_email"]');
+    const telefono = document.querySelector('input[name="cliente_telefono"]');
+    if (nombre) nombre.value = '';
+    if (email) email.value = '';
+    if (telefono) telefono.value = '';
+    syncTitularFromCliente();
+}
+
 function buscarClientePorDocumentoWalkin() {
     const documentoInput = document.getElementById('clienteDocumento');
     const clienteTipo = document.getElementById('clienteTipo');
@@ -731,6 +741,8 @@ function buscarClientePorDocumentoWalkin() {
     }
 
     const documento = documentoInput.value.trim();
+    clearWalkinClienteNuevoData();
+
     if (documento.length < 6) {
         setWalkinDocumentoHint('');
         return;
