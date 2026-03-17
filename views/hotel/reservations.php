@@ -918,17 +918,32 @@
             `;
             document.getElementById('reservaSummary').innerHTML = summary;
 
-            // Inicializar huéspedes
+            // Inicializar huéspedes: el cliente titular se carga como primer huésped.
             document.getElementById('huespedesContainer').innerHTML = '';
-            agregarHuesped(true);
+            agregarHuesped(true, {
+                nombre: reserva.cliente_nombre || '',
+                documento: reserva.cliente_documento || '',
+                tipo_documento: detectarTipoDocumento(reserva.cliente_documento || '')
+            });
         }
 
         function cerrarModalCheckin() {
             document.getElementById('checkinModal').style.display = 'none';
         }
 
-        function agregarHuesped(esTitular = false) {
+        function detectarTipoDocumento(documento = '') {
+            const doc = String(documento).trim();
+            if (/^\d{8}$/.test(doc)) return 'DNI';
+            if (doc.length >= 6 && /[A-Za-z0-9]/.test(doc)) return 'Pasaporte';
+            return 'Otro';
+        }
+
+        function agregarHuesped(esTitular = false, datosIniciales = null) {
             const container = document.getElementById('huespedesContainer');
+            const nombre = datosIniciales?.nombre || '';
+            const documento = datosIniciales?.documento || '';
+            const tipoDocumento = datosIniciales?.tipo_documento || 'DNI';
+
             const card = document.createElement('div');
             card.className = 'huesped-card ' + (esTitular ? 'titular' : '');
             card.innerHTML = `
@@ -938,19 +953,19 @@
                 </div>
                 <div class="form-group">
                     <label>Nombre Completo*</label>
-                    <input type="text" name="huesped_nombre[]" required placeholder="Ej: Juan Pérez García">
+                    <input type="text" name="huesped_nombre[]" required placeholder="Ej: Juan Pérez García" value="${nombre.replace(/"/g, '&quot;')}">
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div class="form-group">
                         <label>Documento*</label>
-                        <input type="text" name="huesped_documento[]" required placeholder="DNI/Pasaporte">
+                        <input type="text" name="huesped_documento[]" required placeholder="DNI/Pasaporte" value="${documento.replace(/"/g, '&quot;')}">
                     </div>
                     <div class="form-group">
                         <label>Tipo Documento</label>
                         <select name="huesped_tipo_documento[]">
-                            <option value="DNI">DNI</option>
-                            <option value="Pasaporte">Pasaporte</option>
-                            <option value="Otro">Otro</option>
+                            <option value="DNI" ${tipoDocumento === 'DNI' ? 'selected' : ''}>DNI</option>
+                            <option value="Pasaporte" ${tipoDocumento === 'Pasaporte' ? 'selected' : ''}>Pasaporte</option>
+                            <option value="Otro" ${tipoDocumento === 'Otro' ? 'selected' : ''}>Otro</option>
                         </select>
                     </div>
                 </div>
