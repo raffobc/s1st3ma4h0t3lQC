@@ -22,7 +22,7 @@ class Hotel {
         return $stmt->fetch() ?: null;
     }
     
-    public function createHotel(array $data): int|false {
+    public function createHotel(array $data) {
         try {
             $this->db->beginTransaction();
 
