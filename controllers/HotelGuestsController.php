@@ -16,8 +16,33 @@ class HotelGuestsController {
     
     public function save() {
         if ($_SERVER["REQUEST_METHOD"] === "POST") {
-            $reservaId = $_POST["reserva_id"];
+            $reservaId = (int)($_POST["reserva_id"] ?? 0);
             $huespedes = $_POST["huespedes"] ?? [];
+
+            if (empty($huespedes) && !empty($_POST["huesped_nombre"]) && is_array($_POST["huesped_nombre"])) {
+                $nombres = $_POST["huesped_nombre"];
+                $documentos = $_POST["huesped_documento"] ?? [];
+                $tiposDocumento = $_POST["huesped_tipo_documento"] ?? [];
+
+                foreach ($nombres as $i => $nombre) {
+                    $huespedes[] = [
+                        'nombre' => trim((string)$nombre),
+                        'documento' => trim((string)($documentos[$i] ?? '')),
+                        'tipo_documento' => (string)($tiposDocumento[$i] ?? 'DNI'),
+                    ];
+                }
+            }
+
+            if ($reservaId <= 0) {
+                if (!empty($_POST["ajax"])) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'error' => 'Reserva invalida']);
+                    exit;
+                }
+
+                header("Location: " . BASE_URL . "/hotel/reservas?error=checkin");
+                exit;
+            }
             
             // Iniciar transacción
             $this->hotelDb->beginTransaction();
@@ -51,8 +76,8 @@ class HotelGuestsController {
                     }
                 }
                 
-                // Actualizar estado de la reserva a 'ocupada'
-                $stmt = $this->hotelDb->prepare("UPDATE reservas SET estado = 'ocupada' WHERE id = ?");
+                // Actualizar estado de la reserva a 'ocupada' y fecha real de check-in
+                $stmt = $this->hotelDb->prepare("UPDATE reservas SET estado = 'ocupada', fecha_checkin = COALESCE(fecha_checkin, NOW()) WHERE id = ?");
                 $stmt->execute([$reservaId]);
                 
                 // Actualizar estado de la habitación

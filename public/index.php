@@ -100,6 +100,10 @@ if ($accessType === "super") {
         
         if ($subAction === "create") {
             $controller->create();
+        } elseif ($subAction === "edit") {
+            $controller->edit();
+        } elseif ($subAction === "recibo") {
+            $controller->receipt();
         } elseif ($subAction === "walkin") {
             $controller->walkin();
         } elseif ($subAction === "create-walkin") {

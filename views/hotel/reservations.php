@@ -762,6 +762,10 @@
 
                             <div class="reservation-actions">
                                 <?php if ($reserva['estado'] === 'reservada'): ?>
+                                    <a href="<?= BASE_URL ?>/hotel/reservas/edit?id=<?= $reserva['id'] ?>"
+                                       style="background: #eef2ff; color: #3730a3; text-decoration: none;">
+                                        ✏️ Editar
+                                    </a>
                                     <button onclick="mostrarCheckinModal(<?= htmlspecialchars(json_encode($reserva)) ?>)"
                                             style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
                                         ✅ Check-in
@@ -773,6 +777,13 @@
                                             style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: white;">
                                         🏁 Check-out
                                     </button>
+                                <?php endif; ?>
+
+                                <?php if ($reserva['estado'] === 'finalizada'): ?>
+                                    <a href="<?= BASE_URL ?>/hotel/reservas/recibo?id=<?= $reserva['id'] ?>"
+                                       style="background: #dcfce7; color: #166534; text-decoration: none;">
+                                        🧾 Ver Recibo
+                                    </a>
                                 <?php endif; ?>
 
                                 <?php if (in_array($reserva['estado'], ['reservada', 'ocupada'])): ?>
@@ -915,11 +926,56 @@
             container.appendChild(card);
         }
 
-        function guardarCheckin(event) {
+        async function guardarCheckin(event) {
             event.preventDefault();
-            // Aquí iría la lógica para guardar los huéspedes
-            alert('Check-in registrado correctamente');
-            cerrarModalCheckin();
+
+            const form = document.getElementById('checkinForm');
+            const reservaId = document.getElementById('reservaId').value;
+            const nombres = Array.from(form.querySelectorAll('input[name="huesped_nombre[]"]')).map(el => el.value.trim());
+            const documentos = Array.from(form.querySelectorAll('input[name="huesped_documento[]"]')).map(el => el.value.trim());
+            const tipos = Array.from(form.querySelectorAll('select[name="huesped_tipo_documento[]"]')).map(el => el.value);
+
+            if (!reservaId) {
+                alert('No se encontro la reserva para check-in.');
+                return;
+            }
+
+            const hasInvalidGuest = nombres.some((nombre, index) => nombre === '' || (documentos[index] ?? '') === '');
+            if (hasInvalidGuest || nombres.length === 0) {
+                alert('Completa nombre y documento para todos los huespedes.');
+                return;
+            }
+
+            const payload = new URLSearchParams();
+            payload.append('reserva_id', reservaId);
+            payload.append('ajax', '1');
+
+            nombres.forEach((nombre, index) => {
+                payload.append(`huespedes[${index}][nombre]`, nombre);
+                payload.append(`huespedes[${index}][documento]`, documentos[index] ?? '');
+                payload.append(`huespedes[${index}][tipo_documento]`, tipos[index] ?? 'DNI');
+            });
+
+            try {
+                const response = await fetch('<?= BASE_URL ?>/hotel/huespedes/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: payload.toString()
+                });
+
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'No se pudo registrar el check-in');
+                }
+
+                alert('Check-in registrado correctamente');
+                window.location.reload();
+            } catch (error) {
+                alert('Error en check-in: ' + error.message);
+            }
         }
 
         function cambiarEstado(reservaId, nuevoEstado) {
