@@ -38,7 +38,8 @@ class HotelReservationsController {
             SELECT r.*,
                    h.numero_habitacion, h.tipo as tipo_habitacion,
                    c.nombre as cliente_nombre, c.documento as cliente_documento,
-                   c.email as cliente_email, c.telefono as cliente_telefono
+                   c.email as cliente_email, c.telefono as cliente_telefono,
+                   COALESCE((SELECT SUM(rs.precio) FROM reserva_servicios rs WHERE rs.reserva_id = r.id), 0) as consumos_total
             FROM reservas r
             JOIN habitaciones h ON r.habitacion_id = h.id
             JOIN clientes c ON r.cliente_id = c.id
@@ -108,6 +109,9 @@ class HotelReservationsController {
                 $lateCheckOut,
                 ($earlyCheckIn ? $this->cargoEarlyCheckIn : 0) + ($lateCheckOut ? $this->cargoLateCheckOut : 0)
             ]);
+
+            $reservationId = (int)$this->hotelDb->lastInsertId();
+            $this->syncReservationTotal($reservationId);
 
             $stmt = $this->hotelDb->prepare("UPDATE habitaciones SET estado = 'reservada' WHERE id = ?");
             $stmt->execute([$habitacionId]);
@@ -198,6 +202,8 @@ class HotelReservationsController {
                     $cargoExtra,
                     $id
                 ]);
+
+                $this->syncReservationTotal($id);
 
                 if ((int)$reservation["habitacion_id"] !== $habitacionId) {
                     $stmt = $this->hotelDb->prepare("UPDATE habitaciones SET estado = 'disponible' WHERE id = ?");
@@ -347,6 +353,7 @@ class HotelReservationsController {
 
             $reservaId = (int)$this->hotelDb->lastInsertId();
             $this->saveGuestsForReservation($reservaId, $_POST["huespedes"] ?? []);
+            $this->syncReservationTotal($reservaId);
 
             $stmt = $this->hotelDb->prepare("UPDATE habitaciones SET estado = 'ocupada' WHERE id = ?");
             $stmt->execute([$habitacionId]);
@@ -358,6 +365,66 @@ class HotelReservationsController {
         } catch (Exception $e) {
             $this->hotelDb->rollBack();
             header("Location: " . BASE_URL . "/hotel/reservas/walkin?error=" . urlencode($e->getMessage()));
+            exit;
+        }
+    }
+
+    public function addConsumption() {
+        if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+            header("Location: " . BASE_URL . "/hotel/reservas");
+            exit;
+        }
+
+        $reservationId = (int)($_POST['reservation_id'] ?? 0);
+        $categoria = trim((string)($_POST['categoria'] ?? ''));
+        $item = trim((string)($_POST['item_nombre'] ?? ''));
+        $cantidad = (int)($_POST['cantidad'] ?? 1);
+        $precioUnitario = (float)($_POST['precio_unitario'] ?? 0);
+
+        if ($reservationId <= 0 || $item === '' || $cantidad <= 0 || $precioUnitario <= 0) {
+            header("Location: " . BASE_URL . "/hotel/reservas?error=consumo_datos");
+            exit;
+        }
+
+        $categoria = in_array($categoria, ['restaurante', 'friobar'], true) ? $categoria : 'restaurante';
+
+        $this->ensureConsumptionSchema();
+
+        $stmt = $this->hotelDb->prepare("SELECT id, estado FROM reservas WHERE id = ? LIMIT 1");
+        $stmt->execute([$reservationId]);
+        $reservation = $stmt->fetch();
+
+        if (!$reservation || !in_array((string)$reservation['estado'], ['reservada', 'ocupada'], true)) {
+            header("Location: " . BASE_URL . "/hotel/reservas?error=consumo_estado");
+            exit;
+        }
+
+        $this->hotelDb->beginTransaction();
+        try {
+            $stmt = $this->hotelDb->prepare("SELECT id FROM servicios WHERE nombre = ? AND categoria = ? LIMIT 1");
+            $stmt->execute([$item, $categoria]);
+            $service = $stmt->fetch();
+
+            if (!$service) {
+                $stmt = $this->hotelDb->prepare("INSERT INTO servicios (nombre, descripcion, precio, categoria, activo) VALUES (?, ?, ?, ?, 1)");
+                $stmt->execute([$item, 'Consumo de ' . $categoria, $precioUnitario, $categoria]);
+                $serviceId = (int)$this->hotelDb->lastInsertId();
+            } else {
+                $serviceId = (int)$service['id'];
+            }
+
+            $lineTotal = round($cantidad * $precioUnitario, 2);
+            $stmt = $this->hotelDb->prepare("INSERT INTO reserva_servicios (reserva_id, servicio_id, cantidad, precio) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$reservationId, $serviceId, $cantidad, $lineTotal]);
+
+            $this->syncReservationTotal($reservationId);
+
+            $this->hotelDb->commit();
+            header("Location: " . BASE_URL . "/hotel/reservas?success=consumo");
+            exit;
+        } catch (Exception $e) {
+            $this->hotelDb->rollBack();
+            header("Location: " . BASE_URL . "/hotel/reservas?error=consumo");
             exit;
         }
     }
@@ -412,10 +479,15 @@ class HotelReservationsController {
                 $stmt = $this->hotelDb->prepare("UPDATE reservas SET fecha_checkout = NOW() WHERE id = ?");
                 $stmt->execute([$id]);
 
+                $this->syncReservationTotal($id);
+                $stmt = $this->hotelDb->prepare("SELECT total, precio_total FROM reservas WHERE id = ? LIMIT 1");
+                $stmt->execute([$id]);
+                $totals = $stmt->fetch() ?: ['total' => 0, 'precio_total' => 0];
+
                 $stmt = $this->hotelDb->prepare("SELECT COALESCE(SUM(monto), 0) as pagado FROM pagos WHERE reserva_id = ?");
                 $stmt->execute([$id]);
                 $pagado = (float)($stmt->fetch()["pagado"] ?? 0);
-                $totalReserva = (float)($reservation["total"] > 0 ? $reservation["total"] : $reservation["precio_total"]);
+                $totalReserva = (float)($totals["total"] > 0 ? $totals["total"] : $totals["precio_total"]);
                 $pendiente = max(0, $totalReserva - $pagado);
 
                 if ($pendiente > 0) {
@@ -489,6 +561,12 @@ class HotelReservationsController {
         ");
         $stmt->execute([$id]);
         $payments = $stmt->fetchAll();
+
+        $consumptions = $this->getReservationConsumptions($id);
+        $totalConsumptions = 0.0;
+        foreach ($consumptions as $consumption) {
+            $totalConsumptions += (float)$consumption['precio'];
+        }
 
         $totalReserva = (float)($reservation['total'] > 0 ? $reservation['total'] : $reservation['precio_total']);
         $totalPagado = 0.0;
@@ -673,6 +751,45 @@ class HotelReservationsController {
         }
 
         return $method;
+    }
+
+    private function ensureConsumptionSchema(): void {
+        $stmt = $this->hotelDb->prepare("SELECT COUNT(*) as total FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'servicios' AND COLUMN_NAME = 'categoria'");
+        $stmt->execute();
+        $exists = (int)($stmt->fetch()['total'] ?? 0) > 0;
+
+        if (!$exists) {
+            $this->hotelDb->exec("ALTER TABLE servicios ADD COLUMN categoria VARCHAR(20) NOT NULL DEFAULT 'restaurante' AFTER precio");
+        }
+    }
+
+    private function syncReservationTotal(int $reservationId): void {
+        $stmt = $this->hotelDb->prepare("SELECT COALESCE(precio_total, 0) as base FROM reservas WHERE id = ? LIMIT 1");
+        $stmt->execute([$reservationId]);
+        $base = (float)($stmt->fetch()['base'] ?? 0);
+
+        $stmt = $this->hotelDb->prepare("SELECT COALESCE(SUM(precio), 0) as consumos FROM reserva_servicios WHERE reserva_id = ?");
+        $stmt->execute([$reservationId]);
+        $consumos = (float)($stmt->fetch()['consumos'] ?? 0);
+
+        $total = $base + $consumos;
+        $stmt = $this->hotelDb->prepare("UPDATE reservas SET total = ? WHERE id = ?");
+        $stmt->execute([$total, $reservationId]);
+    }
+
+    private function getReservationConsumptions(int $reservationId): array {
+        $this->ensureConsumptionSchema();
+
+        $stmt = $this->hotelDb->prepare(" 
+            SELECT rs.cantidad, rs.precio, s.nombre, s.categoria
+            FROM reserva_servicios rs
+            JOIN servicios s ON s.id = rs.servicio_id
+            WHERE rs.reserva_id = ?
+            ORDER BY rs.id ASC
+        ");
+        $stmt->execute([$reservationId]);
+
+        return $stmt->fetchAll();
     }
 }
 ?>

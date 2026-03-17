@@ -757,6 +757,7 @@
                                 <div class="reservation-detail">
                                     <div class="detail-label">Total</div>
                                     <div class="detail-price">S/ <?= number_format($reserva['precio_total'], 2) ?></div>
+                                    <small style="color: #6b7280;">Consumos: S/ <?= number_format((float)($reserva['consumos_total'] ?? 0), 2) ?></small>
                                 </div>
                             </div>
 
@@ -773,6 +774,10 @@
                                 <?php endif; ?>
 
                                 <?php if ($reserva['estado'] === 'ocupada'): ?>
+                                    <button onclick="abrirConsumoModal(<?= htmlspecialchars(json_encode($reserva)) ?>)"
+                                            style="background: #ecfeff; color: #0f766e;">
+                                        🍽️ Registrar Consumo
+                                    </button>
                                     <button onclick="abrirCheckoutModal(<?= $reserva['id'] ?>)"
                                             style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: white;">
                                         🏁 Check-out
@@ -801,6 +806,54 @@
                     <?php endforeach; ?>
                 </div>
             <?php endif; ?>
+        </div>
+    </div>
+
+    <div id="consumoModal" class="modal">
+        <div class="modal-content" style="max-width: 560px;">
+            <div class="modal-header">
+                <h2>🍽️ Registrar Consumo</h2>
+                <button type="button" onclick="cerrarConsumoModal()" class="btn-close">×</button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="<?= BASE_URL ?>/hotel/reservas/add-consumo">
+                    <input type="hidden" name="reservation_id" id="consumoReservationId">
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label>Reserva</label>
+                        <div id="consumoReservaInfo" style="font-weight: 700; color: #374151;">-</div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label for="categoriaConsumo">Origen del consumo</label>
+                        <select id="categoriaConsumo" name="categoria" class="form-control" required>
+                            <option value="restaurante">Restaurante</option>
+                            <option value="friobar">Friobar</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label for="itemConsumo">Item</label>
+                        <input id="itemConsumo" type="text" name="item_nombre" class="form-control" placeholder="Ej: Hamburguesa / Gaseosa" required>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label for="cantidadConsumo">Cantidad</label>
+                            <input id="cantidadConsumo" type="number" name="cantidad" class="form-control" min="1" value="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="precioConsumo">Precio unitario (S/)</label>
+                            <input id="precioConsumo" type="number" name="precio_unitario" class="form-control" min="0.1" step="0.01" required>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button type="submit" style="flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 700; background: #0f766e; color: white; cursor: pointer;">Guardar consumo</button>
+                        <button type="button" onclick="cerrarConsumoModal()" style="flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 700; background: #e5e7eb; color: #111827; cursor: pointer;">Cancelar</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -1030,6 +1083,19 @@
             document.getElementById('checkoutModal').style.display = 'flex';
         }
 
+        function abrirConsumoModal(reserva) {
+            document.getElementById('consumoReservationId').value = reserva.id;
+            document.getElementById('consumoReservaInfo').textContent = `#${reserva.id} - ${reserva.cliente_nombre} (Hab ${reserva.numero_habitacion})`;
+            document.getElementById('itemConsumo').value = '';
+            document.getElementById('cantidadConsumo').value = '1';
+            document.getElementById('precioConsumo').value = '';
+            document.getElementById('consumoModal').style.display = 'flex';
+        }
+
+        function cerrarConsumoModal() {
+            document.getElementById('consumoModal').style.display = 'none';
+        }
+
         function cerrarCheckoutModal() {
             document.getElementById('checkoutModal').style.display = 'none';
         }
@@ -1060,6 +1126,11 @@
             const checkoutModal = document.getElementById('checkoutModal');
             if (event.target === checkoutModal) {
                 cerrarCheckoutModal();
+            }
+
+            const consumoModal = document.getElementById('consumoModal');
+            if (event.target === consumoModal) {
+                cerrarConsumoModal();
             }
         });
     </script>

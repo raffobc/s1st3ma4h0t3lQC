@@ -33,6 +33,14 @@
             <h3>Resumen</h3>
             <table style="width: 100%; border-collapse: collapse;">
                 <tr>
+                    <td style="padding: 8px 0; color: #6b7280;">Alojamiento base</td>
+                    <td style="padding: 8px 0; text-align: right;"><strong>S/ <?= number_format((float)$reservation['precio_total'], 2) ?></strong></td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #6b7280;">Consumos (restaurante/friobar)</td>
+                    <td style="padding: 8px 0; text-align: right;"><strong>S/ <?= number_format($totalConsumptions, 2) ?></strong></td>
+                </tr>
+                <tr>
                     <td style="padding: 8px 0; color: #6b7280;">Total reserva</td>
                     <td style="padding: 8px 0; text-align: right;"><strong>S/ <?= number_format($totalReserva, 2) ?></strong></td>
                 </tr>
@@ -45,6 +53,34 @@
                     <td style="padding: 8px 0; text-align: right;"><strong>S/ <?= number_format($balance, 2) ?></strong></td>
                 </tr>
             </table>
+        </div>
+
+        <div class="box" style="margin-bottom: 20px;">
+            <h3>Detalle de Consumos</h3>
+            <?php if (empty($consumptions)): ?>
+                <p style="color: #6b7280;">No se registraron consumos.</p>
+            <?php else: ?>
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 8px; border-bottom: 1px solid #e5e7eb;">Origen</th>
+                            <th style="text-align: left; padding: 8px; border-bottom: 1px solid #e5e7eb;">Item</th>
+                            <th style="text-align: center; padding: 8px; border-bottom: 1px solid #e5e7eb;">Cant.</th>
+                            <th style="text-align: right; padding: 8px; border-bottom: 1px solid #e5e7eb;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($consumptions as $consumption): ?>
+                            <tr>
+                                <td style="padding: 8px; border-bottom: 1px solid #f3f4f6;"><?= htmlspecialchars(ucfirst((string)$consumption['categoria'])) ?></td>
+                                <td style="padding: 8px; border-bottom: 1px solid #f3f4f6;"><?= htmlspecialchars((string)$consumption['nombre']) ?></td>
+                                <td style="padding: 8px; border-bottom: 1px solid #f3f4f6; text-align: center;"><?= (int)$consumption['cantidad'] ?></td>
+                                <td style="padding: 8px; border-bottom: 1px solid #f3f4f6; text-align: right;">S/ <?= number_format((float)$consumption['precio'], 2) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
         </div>
 
         <div class="box" style="margin-bottom: 20px;">

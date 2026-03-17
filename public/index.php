@@ -102,6 +102,8 @@ if ($accessType === "super") {
             $controller->create();
         } elseif ($subAction === "edit") {
             $controller->edit();
+        } elseif ($subAction === "add-consumo") {
+            $controller->addConsumption();
         } elseif ($subAction === "recibo") {
             $controller->receipt();
         } elseif ($subAction === "walkin") {
