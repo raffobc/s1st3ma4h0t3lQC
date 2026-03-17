@@ -84,6 +84,74 @@ class HotelUsersController {
         }
     }
 
+    public function edit(): void {
+        $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
+        if ($id <= 0) {
+            header('Location: ' . BASE_URL . '/hotel/usuarios?error=datos');
+            exit;
+        }
+
+        $stmt = $this->db->prepare('SELECT id, nombre, email, rol, activo FROM usuarios WHERE id = ? LIMIT 1');
+        $stmt->execute([$id]);
+        $user = $stmt->fetch();
+
+        if (!$user) {
+            header('Location: ' . BASE_URL . '/hotel/usuarios?error=datos');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!$this->isValidCsrfToken($_POST['csrf_token'] ?? null)) {
+                header('Location: ' . BASE_URL . '/hotel/usuarios?error=csrf');
+                exit;
+            }
+
+            $nombre = trim((string)($_POST['nombre'] ?? ''));
+            $email = trim((string)($_POST['email'] ?? ''));
+            $rol = trim((string)($_POST['rol'] ?? 'staff'));
+            $password = (string)($_POST['password'] ?? '');
+
+            $rolesPermitidos = ['admin', 'staff', 'recepcion'];
+
+            if ($nombre === '' || $email === '') {
+                header('Location: ' . BASE_URL . '/hotel/usuarios/edit?id=' . $id . '&error=datos');
+                exit;
+            }
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                header('Location: ' . BASE_URL . '/hotel/usuarios/edit?id=' . $id . '&error=email');
+                exit;
+            }
+
+            if (!in_array($rol, $rolesPermitidos, true)) {
+                $rol = 'staff';
+            }
+
+            if ($password !== '' && strlen($password) < 6) {
+                header('Location: ' . BASE_URL . '/hotel/usuarios/edit?id=' . $id . '&error=pass');
+                exit;
+            }
+
+            try {
+                if ($password !== '') {
+                    $stmt = $this->db->prepare('UPDATE usuarios SET nombre = ?, email = ?, rol = ?, password = ?, updated_at = NOW() WHERE id = ?');
+                    $stmt->execute([$nombre, $email, $rol, password_hash($password, PASSWORD_BCRYPT), $id]);
+                } else {
+                    $stmt = $this->db->prepare('UPDATE usuarios SET nombre = ?, email = ?, rol = ?, updated_at = NOW() WHERE id = ?');
+                    $stmt->execute([$nombre, $email, $rol, $id]);
+                }
+
+                header('Location: ' . BASE_URL . '/hotel/usuarios?success=updated');
+                exit;
+            } catch (PDOException $e) {
+                header('Location: ' . BASE_URL . '/hotel/usuarios/edit?id=' . $id . '&error=duplicate');
+                exit;
+            }
+        }
+
+        require_once BASE_PATH . '/views/hotel/user_edit.php';
+    }
+
     public function toggleStatus(): void {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: ' . BASE_URL . '/hotel/usuarios');

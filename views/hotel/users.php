@@ -82,6 +82,7 @@
                             <td><?= htmlspecialchars(ucfirst($user['rol'])) ?></td>
                             <td><?= (int)$user['activo'] === 1 ? 'Activo' : 'Inactivo' ?></td>
                             <td>
+                                <a href="<?= BASE_URL ?>/hotel/usuarios/edit?id=<?= (int)$user['id'] ?>" class="btn-toggle" style="text-decoration: none; margin-right: 6px; display: inline-block;">Editar</a>
                                 <form method="POST" action="<?= BASE_URL ?>/hotel/usuarios/toggle" style="display: inline;">
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                                     <input type="hidden" name="id" value="<?= (int)$user['id'] ?>">

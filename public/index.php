@@ -149,6 +149,8 @@ if ($accessType === "super") {
 
         if ($subAction === "create") {
             $controller->create();
+        } elseif ($subAction === "edit") {
+            $controller->edit();
         } elseif ($subAction === "toggle") {
             $controller->toggleStatus();
         } else {
