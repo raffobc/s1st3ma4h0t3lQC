@@ -142,6 +142,18 @@ if ($accessType === "super") {
         } else {
             $controller->index();
         }
+    } elseif ($action === "usuarios") {
+        require_once "../controllers/HotelUsersController.php";
+        $subAction = $uri[2] ?? "index";
+        $controller = new HotelUsersController();
+
+        if ($subAction === "create") {
+            $controller->create();
+        } elseif ($subAction === "toggle") {
+            $controller->toggleStatus();
+        } else {
+            $controller->index();
+        }
     } else {
         http_response_code(404);
         echo "Página no encontrada";

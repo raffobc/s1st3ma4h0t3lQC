@@ -29,6 +29,9 @@
             <a href="<?= BASE_URL ?>/hotel/clientes" class="nav-link<?= strpos($currentPath, '/hotel/clientes') !== false ? ' active' : '' ?>">Clientes</a>
             <a href="<?= BASE_URL ?>/hotel/calendario" class="nav-link<?= strpos($currentPath, '/hotel/calendario') !== false ? ' active' : '' ?>">Calendario</a>
             <a href="<?= BASE_URL ?>/hotel/estadisticas" class="nav-link<?= strpos($currentPath, '/hotel/estadisticas') !== false ? ' active' : '' ?>">Estadisticas</a>
+            <?php if (($_SESSION['hotel_user_role'] ?? 'staff') === 'admin'): ?>
+                <a href="<?= BASE_URL ?>/hotel/usuarios" class="nav-link<?= strpos($currentPath, '/hotel/usuarios') !== false ? ' active' : '' ?>">Usuarios</a>
+            <?php endif; ?>
         </div>
         
         <div class="navbar-user">

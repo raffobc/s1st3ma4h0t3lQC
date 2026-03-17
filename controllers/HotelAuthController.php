@@ -22,6 +22,7 @@ class HotelAuthController {
                 $_SESSION["hotel_user_id"] = $user["id"];
                 $_SESSION["hotel_user_name"] = $user["nombre"];
                 $_SESSION["hotel_user_email"] = $user["email"];
+                $_SESSION["hotel_user_role"] = $user["rol"] ?? 'staff';
                 $_SESSION["hotel_id"] = 1; // Hotel demo
                 $_SESSION["hotel_name"] = "Hotel Demo";
                 $_SESSION["hotel_db_name"] = "hotel_demo"; // Para compatibilidad
