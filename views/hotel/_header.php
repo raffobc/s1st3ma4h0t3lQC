@@ -27,10 +27,22 @@
         
         <div class="navbar-user">
             <details class="user-menu">
-                <summary class="user-menu-trigger">Admin Hotel</summary>
+                <summary class="user-menu-trigger">
+                    <span class="user-avatar">AH</span>
+                    <span class="user-menu-text">
+                        <strong>Admin Hotel</strong>
+                        <small>Cuenta</small>
+                    </span>
+                </summary>
                 <div class="user-dropdown">
-                    <a href="<?= BASE_URL ?>/hotel/password" class="user-dropdown-link">Cambiar Clave</a>
-                    <a href="<?= BASE_URL ?>/hotel/logout" class="user-dropdown-link danger">Salir</a>
+                    <a href="<?= BASE_URL ?>/hotel/password" class="user-dropdown-link">
+                        <span class="menu-icon">🔐</span>
+                        <span>Cambiar Clave</span>
+                    </a>
+                    <a href="<?= BASE_URL ?>/hotel/logout" class="user-dropdown-link danger">
+                        <span class="menu-icon">🚪</span>
+                        <span>Salir</span>
+                    </a>
                 </div>
             </details>
         </div>
