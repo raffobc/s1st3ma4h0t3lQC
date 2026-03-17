@@ -26,15 +26,15 @@
     <form method="POST" class="form-container">
         <div class="form-grid">
             <div class="form-group">
-                <label class="form-label">Nombre Completo *</label>
-                <input type="text" name="nombre" class="form-control" required placeholder="Juan Pérez García"
-                       value="<?= htmlspecialchars($client['nombre'] ?? '') ?>">
+                <label class="form-label">Documento de Identidad (DNI) *</label>
+                <input type="text" name="documento" id="documentoInput" class="form-control" required placeholder="DNI, Pasaporte"
+                       autofocus value="<?= htmlspecialchars($client['documento'] ?? '') ?>">
             </div>
             
             <div class="form-group">
-                <label class="form-label">Documento de Identidad *</label>
-                <input type="text" name="documento" class="form-control" required placeholder="DNI, Pasaporte"
-                       value="<?= htmlspecialchars($client['documento'] ?? '') ?>">
+                <label class="form-label">Nombre Completo *</label>
+                <input type="text" name="nombre" class="form-control" required placeholder="Juan Pérez García"
+                       value="<?= htmlspecialchars($client['nombre'] ?? '') ?>">
             </div>
         </div>
         

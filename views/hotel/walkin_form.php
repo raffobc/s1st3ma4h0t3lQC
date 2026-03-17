@@ -1007,8 +1007,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('clienteExistente')?.addEventListener('change', syncTitularFromCliente);
     document.getElementById('clienteNombre')?.addEventListener('input', syncTitularFromCliente);
-    document.getElementById('clienteDocumento')?.addEventListener('input', syncTitularFromCliente);
-    document.getElementById('clienteDocumento')?.addEventListener('blur', buscarClientePorDocumentoWalkin);
+    const dniInputWalkin = document.getElementById('clienteDocumento');
+    dniInputWalkin?.addEventListener('input', syncTitularFromCliente);
+    dniInputWalkin?.addEventListener('blur', buscarClientePorDocumentoWalkin);
+    dniInputWalkin?.focus();
     document.querySelector('input[name="cliente_telefono"]')?.addEventListener('input', syncTitularFromCliente);
     document.querySelector('input[name="cliente_email"]')?.addEventListener('input', syncTitularFromCliente);
     syncTitularFromCliente();

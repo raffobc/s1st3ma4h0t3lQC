@@ -681,7 +681,7 @@ let clienteEncontradoPorDni = null;
 
 function abrirModalCliente() {
     document.getElementById('clientModal').style.display = 'block';
-    document.getElementById('clienteNombre').focus();
+    setTimeout(() => document.getElementById('clienteDocumento')?.focus(), 50);
 }
 
 function cerrarModalCliente() {
