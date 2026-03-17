@@ -45,6 +45,9 @@ if ($accessType === "super") {
     if ($action === "login") {
         $controller = new HotelAuthController();
         $controller->login();
+    } elseif ($action === "password") {
+        $controller = new HotelAuthController();
+        $controller->changePassword();
     } elseif ($action === "logout") {
         $controller = new HotelAuthController();
         $controller->logout();

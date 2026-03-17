@@ -49,5 +49,49 @@ class HotelAuthController {
         header("Location: " . BASE_URL . "/hotel/login");
         exit;
     }
+
+    public function changePassword(): void {
+        $this->checkAuth();
+
+        $error = null;
+        $success = null;
+
+        if ($_SERVER["REQUEST_METHOD"] === "POST") {
+            $currentPassword = (string)($_POST["current_password"] ?? "");
+            $newPassword = (string)($_POST["new_password"] ?? "");
+            $confirmPassword = (string)($_POST["confirm_password"] ?? "");
+            $userId = (int)($_SESSION["hotel_user_id"] ?? 0);
+
+            if ($currentPassword === "" || $newPassword === "" || $confirmPassword === "") {
+                $error = "Completa todos los campos.";
+            } elseif (strlen($newPassword) < 6) {
+                $error = "La nueva contraseña debe tener al menos 6 caracteres.";
+            } elseif ($newPassword !== $confirmPassword) {
+                $error = "La confirmación no coincide con la nueva contraseña.";
+            } else {
+                $stmt = $this->db->prepare("SELECT id, password FROM usuarios WHERE id = ? AND activo = 1 LIMIT 1");
+                $stmt->execute([$userId]);
+                $user = $stmt->fetch();
+
+                if (!$user || !password_verify($currentPassword, (string)$user["password"])) {
+                    $error = "La contraseña actual es incorrecta.";
+                } else {
+                    $newHash = password_hash($newPassword, PASSWORD_BCRYPT);
+                    $update = $this->db->prepare("UPDATE usuarios SET password = ?, updated_at = NOW() WHERE id = ?");
+                    $update->execute([$newHash, $userId]);
+                    $success = "Contraseña actualizada correctamente.";
+                }
+            }
+        }
+
+        require_once BASE_PATH . "/views/hotel/change_password.php";
+    }
+
+    private function checkAuth(): void {
+        if (!isset($_SESSION["hotel_user_id"])) {
+            header("Location: " . BASE_URL . "/hotel/login");
+            exit;
+        }
+    }
 }
 ?>

@@ -26,6 +26,7 @@
         
         <div class="navbar-user">
             <span style="font-weight: 600;"><?= htmlspecialchars($_SESSION["hotel_user_name"]) ?></span>
+            <a href="<?= BASE_URL ?>/hotel/password" class="btn-logout" style="background:#2563eb;">Cambiar Clave</a>
             <a href="<?= BASE_URL ?>/hotel/logout" class="btn-logout">Salir</a>
         </div>
     </nav>
