@@ -4,16 +4,28 @@ class Hotel {
 
     public function __construct() {
         $this->db = MasterDatabase::getConnection();
+        $this->ensureHotelTables();
+    }
+
+    private function ensureHotelTables(): void {
+        $this->db->exec("\n            CREATE TABLE IF NOT EXISTS hoteles (\n                id INT PRIMARY KEY AUTO_INCREMENT,\n                nombre VARCHAR(150) NOT NULL,\n                razon_social VARCHAR(200) NOT NULL,\n                ruc VARCHAR(20) UNIQUE NOT NULL,\n                direccion VARCHAR(255),\n                telefono VARCHAR(30),\n                email VARCHAR(100),\n                ciudad VARCHAR(100),\n                pais VARCHAR(100) DEFAULT 'Peru',\n                db_name VARCHAR(100),\n                db_host VARCHAR(100),\n                db_user VARCHAR(100),\n                db_password VARCHAR(255),\n                estado VARCHAR(20) DEFAULT 'activo',\n                plan VARCHAR(30) DEFAULT 'basico',\n                max_habitaciones INT DEFAULT 50,\n                fecha_registro DATE,\n                fecha_vencimiento DATE,\n                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP\n            )\n        ");
+
+        $this->db->exec("\n            CREATE TABLE IF NOT EXISTS hotel_administradores (\n                id INT PRIMARY KEY AUTO_INCREMENT,\n                hotel_id INT NOT NULL,\n                nombre VARCHAR(120) NOT NULL,\n                email VARCHAR(100) UNIQUE NOT NULL,\n                password VARCHAR(255) NOT NULL,\n                telefono VARCHAR(30),\n                activo TINYINT DEFAULT 1,\n                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n                FOREIGN KEY (hotel_id) REFERENCES hoteles(id) ON DELETE CASCADE\n            )\n        ");
     }
     
     public function getAllHotels(): array {
-        $stmt = $this->db->query("
-            SELECT h.*, 
-                   (SELECT COUNT(*) FROM hotel_administradores WHERE hotel_id = h.id) as total_admins
-            FROM hoteles h
-            ORDER BY h.created_at DESC
-        ");
-        return $stmt->fetchAll();
+        try {
+            $stmt = $this->db->query(" 
+                SELECT h.*, 
+                       (SELECT COUNT(*) FROM hotel_administradores WHERE hotel_id = h.id) as total_admins
+                FROM hoteles h
+                ORDER BY h.created_at DESC
+            ");
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            error_log('Hotel getAllHotels error: ' . $e->getMessage());
+            return [];
+        }
     }
     
     public function getHotelById(int $id): ?array {
