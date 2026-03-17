@@ -15,14 +15,80 @@ class HotelDashboardController {
     }
     
     public function dashboard(): void {
-        $stats = $this->getStats();
+        $dateFilter = $this->getDateFilter();
+        $stats = $this->getStats($dateFilter);
         $recentReservations = $this->getRecentReservations();
         $roomsByStatus = $this->getRoomsByStatus();
+        $managementStats = $this->getManagementStats($dateFilter);
+        $paymentsByMethod = $this->getPaymentsByMethod($dateFilter);
         
         require_once BASE_PATH . "/views/hotel/dashboard.php";
     }
+
+    private function getDateFilter(): array {
+        $period = $_GET["period"] ?? "month";
+        $allowedPeriods = ["today", "week", "month", "custom"];
+
+        if (!in_array($period, $allowedPeriods, true)) {
+            $period = "month";
+        }
+
+        $today = new DateTimeImmutable("today");
+        $startDate = $today;
+        $endDate = $today;
+
+        if ($period === "today") {
+            $startDate = $today;
+            $endDate = $today;
+        } elseif ($period === "week") {
+            $startDate = $today->modify("monday this week");
+            $endDate = $today->modify("sunday this week");
+        } elseif ($period === "custom") {
+            $customFrom = $_GET["from"] ?? "";
+            $customTo = $_GET["to"] ?? "";
+            $fromDate = DateTimeImmutable::createFromFormat("Y-m-d", $customFrom) ?: null;
+            $toDate = DateTimeImmutable::createFromFormat("Y-m-d", $customTo) ?: null;
+
+            if ($fromDate && $toDate) {
+                if ($fromDate > $toDate) {
+                    $temp = $fromDate;
+                    $fromDate = $toDate;
+                    $toDate = $temp;
+                }
+                $startDate = $fromDate;
+                $endDate = $toDate;
+            } else {
+                $period = "month";
+                $startDate = $today->modify("first day of this month");
+                $endDate = $today->modify("last day of this month");
+            }
+        } else {
+            $startDate = $today->modify("first day of this month");
+            $endDate = $today->modify("last day of this month");
+            $period = "month";
+        }
+
+        $start = $startDate->format("Y-m-d");
+        $end = $endDate->format("Y-m-d");
+
+        $label = "Mes actual";
+        if ($period === "today") {
+            $label = "Hoy";
+        } elseif ($period === "week") {
+            $label = "Semana actual";
+        } elseif ($period === "custom") {
+            $label = "Rango personalizado";
+        }
+
+        return [
+            "period" => $period,
+            "start" => $start,
+            "end" => $end,
+            "label" => $label,
+        ];
+    }
     
-    private function getStats(): array {
+    private function getStats(array $dateFilter): array {
         $stmt = $this->hotelDb->query("SELECT COUNT(*) as total FROM habitaciones");
         $totalRooms = $stmt->fetch()["total"];
         
@@ -38,13 +104,13 @@ class HotelDashboardController {
         $stmt = $this->hotelDb->query("SELECT COUNT(*) as total FROM clientes");
         $totalClients = $stmt->fetch()["total"];
         
-        $stmt = $this->hotelDb->query("
-            SELECT COALESCE(SUM(monto), 0) as total 
-            FROM pagos 
-            WHERE MONTH(created_at) = MONTH(CURRENT_DATE())
-            AND YEAR(created_at) = YEAR(CURRENT_DATE())
+        $stmt = $this->hotelDb->prepare("
+            SELECT COALESCE(SUM(monto), 0) as total
+            FROM pagos
+            WHERE DATE(fecha_pago) BETWEEN ? AND ?
         ");
-        $monthlyRevenue = $stmt->fetch()["total"];
+        $stmt->execute([$dateFilter["start"], $dateFilter["end"]]);
+        $periodRevenue = $stmt->fetch()["total"];
         
         return [
             "total_rooms" => $totalRooms,
@@ -52,7 +118,7 @@ class HotelDashboardController {
             "occupied_rooms" => $occupiedRooms,
             "active_reservations" => $activeReservations,
             "total_clients" => $totalClients,
-            "monthly_revenue" => $monthlyRevenue,
+            "monthly_revenue" => $periodRevenue,
             "occupancy_rate" => $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100, 1) : 0
         ];
     }
@@ -79,6 +145,85 @@ class HotelDashboardController {
             GROUP BY estado
         ");
         
+        return $stmt->fetchAll();
+    }
+
+    private function getManagementStats(array $dateFilter): array {
+        $stmt = $this->hotelDb->prepare("
+            SELECT
+                SUM(CASE WHEN DATE(fecha_checkin) BETWEEN ? AND ? THEN 1 ELSE 0 END) AS checkins_periodo,
+                SUM(CASE WHEN DATE(fecha_checkout) BETWEEN ? AND ? THEN 1 ELSE 0 END) AS checkouts_periodo,
+                SUM(CASE WHEN DATE(created_at) BETWEEN ? AND ? THEN 1 ELSE 0 END) AS reservas_periodo,
+                SUM(CASE WHEN estado = 'finalizada' AND DATE(updated_at) BETWEEN ? AND ? THEN 1 ELSE 0 END) AS finalizadas_periodo,
+                SUM(CASE WHEN estado = 'cancelada' AND DATE(updated_at) BETWEEN ? AND ? THEN 1 ELSE 0 END) AS canceladas_periodo,
+                COALESCE(AVG(CASE WHEN DATE(created_at) BETWEEN ? AND ? AND estado IN ('ocupada', 'finalizada') THEN DATEDIFF(fecha_salida, fecha_entrada) END), 0) AS estancia_promedio
+            FROM reservas
+        ");
+        $stmt->execute([
+            $dateFilter["start"], $dateFilter["end"],
+            $dateFilter["start"], $dateFilter["end"],
+            $dateFilter["start"], $dateFilter["end"],
+            $dateFilter["start"], $dateFilter["end"],
+            $dateFilter["start"], $dateFilter["end"],
+            $dateFilter["start"], $dateFilter["end"],
+        ]);
+        $reservationMetrics = $stmt->fetch() ?: [];
+
+        $stmt = $this->hotelDb->prepare("
+            SELECT COALESCE(SUM(monto), 0) AS ingresos_periodo
+            FROM pagos
+            WHERE DATE(fecha_pago) BETWEEN ? AND ?
+        ");
+        $stmt->execute([$dateFilter["start"], $dateFilter["end"]]);
+        $periodRevenue = (float)($stmt->fetch()["ingresos_periodo"] ?? 0);
+
+        $stmt = $this->hotelDb->prepare("
+            SELECT COALESCE(AVG(monto), 0) AS ticket_promedio_periodo
+            FROM pagos
+            WHERE DATE(fecha_pago) BETWEEN ? AND ?
+        ");
+        $stmt->execute([$dateFilter["start"], $dateFilter["end"]]);
+        $averageTicket = (float)($stmt->fetch()["ticket_promedio_periodo"] ?? 0);
+
+        $stmt = $this->hotelDb->query("
+            SELECT COALESCE(SUM(GREATEST(r.total - COALESCE(p.pagado, 0), 0)), 0) AS saldo_pendiente_total
+            FROM reservas r
+            LEFT JOIN (
+                SELECT reserva_id, SUM(monto) AS pagado
+                FROM pagos
+                GROUP BY reserva_id
+            ) p ON p.reserva_id = r.id
+            WHERE r.estado IN ('reservada', 'ocupada')
+        ");
+        $outstandingBalance = (float)($stmt->fetch()["saldo_pendiente_total"] ?? 0);
+
+        $reservasPeriodo = (int)($reservationMetrics["reservas_periodo"] ?? 0);
+        $canceladasPeriodo = (int)($reservationMetrics["canceladas_periodo"] ?? 0);
+
+        return [
+            "checkins_hoy" => (int)($reservationMetrics["checkins_periodo"] ?? 0),
+            "checkouts_hoy" => (int)($reservationMetrics["checkouts_periodo"] ?? 0),
+            "reservas_mes" => $reservasPeriodo,
+            "finalizadas_mes" => (int)($reservationMetrics["finalizadas_periodo"] ?? 0),
+            "canceladas_mes" => $canceladasPeriodo,
+            "estancia_promedio" => round((float)($reservationMetrics["estancia_promedio"] ?? 0), 1),
+            "ingresos_hoy" => $periodRevenue,
+            "ticket_promedio_mes" => $averageTicket,
+            "saldo_pendiente_total" => $outstandingBalance,
+            "tasa_cancelacion_mes" => $reservasPeriodo > 0 ? round(($canceladasPeriodo / $reservasPeriodo) * 100, 1) : 0,
+        ];
+    }
+
+    private function getPaymentsByMethod(array $dateFilter): array {
+        $stmt = $this->hotelDb->prepare("
+            SELECT metodo_pago, COUNT(*) AS cantidad, COALESCE(SUM(monto), 0) AS total
+            FROM pagos
+            WHERE DATE(fecha_pago) BETWEEN ? AND ?
+            GROUP BY metodo_pago
+            ORDER BY total DESC
+        ");
+        $stmt->execute([$dateFilter["start"], $dateFilter["end"]]);
+
         return $stmt->fetchAll();
     }
 }
