@@ -122,13 +122,69 @@ body {
 .navbar-user {
     display: flex;
     align-items: center;
-    gap: 20px;
     flex: 0 0 auto;
 }
 
-.navbar-user span {
-    font-weight: 700;
+.user-menu {
+    position: relative;
+}
+
+.user-menu-trigger {
+    list-style: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
     color: #1f2937;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.user-menu-trigger::-webkit-details-marker {
+    display: none;
+}
+
+.user-menu-trigger::after {
+    content: ' ▼';
+    font-size: 11px;
+    color: #6b7280;
+}
+
+.user-menu[open] .user-menu-trigger {
+    border-color: #667eea;
+}
+
+.user-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    min-width: 170px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+    padding: 6px;
+    z-index: 1200;
+}
+
+.user-dropdown-link {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    color: #1f2937;
+}
+
+.user-dropdown-link:hover {
+    background: #f3f4f6;
+}
+
+.user-dropdown-link.danger {
+    color: #b91c1c;
 }
 
 .btn-logout {
