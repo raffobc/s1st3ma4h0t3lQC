@@ -72,6 +72,9 @@ if ($accessType === "super") {
     } elseif ($action === "dashboard") {
         $controller = new HotelDashboardController();
         $controller->dashboard();
+    } elseif ($action === "estadisticas") {
+        $controller = new HotelDashboardController();
+        $controller->statistics();
     } elseif ($action === "calendario") {
         require_once "../controllers/HotelCalendarController.php";
         $controller = new HotelCalendarController();

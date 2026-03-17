@@ -15,14 +15,20 @@ class HotelDashboardController {
     }
     
     public function dashboard(): void {
-        $dateFilter = $this->getDateFilter();
-        $stats = $this->getStats($dateFilter);
+        $stats = $this->getStats();
         $recentReservations = $this->getRecentReservations();
         $roomsByStatus = $this->getRoomsByStatus();
-        $managementStats = $this->getManagementStats($dateFilter);
-        $paymentsByMethod = $this->getPaymentsByMethod($dateFilter);
         
         require_once BASE_PATH . "/views/hotel/dashboard.php";
+    }
+
+    public function statistics(): void {
+        $dateFilter = $this->getDateFilter();
+        $stats = $this->getStats($dateFilter);
+        $managementStats = $this->getManagementStats($dateFilter);
+        $paymentsByMethod = $this->getPaymentsByMethod($dateFilter);
+
+        require_once BASE_PATH . "/views/hotel/statistics.php";
     }
 
     private function getDateFilter(): array {
@@ -88,7 +94,15 @@ class HotelDashboardController {
         ];
     }
     
-    private function getStats(array $dateFilter): array {
+    private function getStats(?array $dateFilter = null): array {
+        if ($dateFilter === null) {
+            $today = new DateTimeImmutable("today");
+            $dateFilter = [
+                "start" => $today->modify("first day of this month")->format("Y-m-d"),
+                "end" => $today->modify("last day of this month")->format("Y-m-d"),
+            ];
+        }
+
         $stmt = $this->hotelDb->query("SELECT COUNT(*) as total FROM habitaciones");
         $totalRooms = $stmt->fetch()["total"];
         
