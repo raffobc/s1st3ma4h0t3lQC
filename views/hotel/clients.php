@@ -373,7 +373,11 @@
                                     <td class="actions">
                                         <a href="<?= BASE_URL ?>/hotel/clientes/view?id=<?= $client['id'] ?>" class="btn-action-sm" title="Ver Detalles">👁️</a>
                                         <a href="<?= BASE_URL ?>/hotel/clientes/edit?id=<?= $client['id'] ?>" class="btn-action-sm" title="Editar">✏️</a>
-                                        <a href="<?= BASE_URL ?>/hotel/clientes/delete?id=<?= $client['id'] ?>" class="btn-action-sm" title="Eliminar" onclick="return confirm('¿Eliminar este cliente?')">🗑️</a>
+                                        <form method="POST" action="<?= BASE_URL ?>/hotel/clientes/delete" style="display: inline;" onsubmit="return confirm('¿Eliminar este cliente?')">
+                                            <input type="hidden" name="id" value="<?= (int)$client['id'] ?>">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                            <button type="submit" class="btn-action-sm" title="Eliminar" style="border: none; cursor: pointer;">🗑️</button>
+                                        </form>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

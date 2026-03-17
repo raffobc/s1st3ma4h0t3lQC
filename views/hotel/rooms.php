@@ -447,9 +447,13 @@
                                 <a href="<?= BASE_URL ?>/hotel/habitaciones/edit?id=<?= $room["id"] ?>" style="background: linear-gradient(135deg, #667eea 0%, #5568d3 100%); color: white;">
                                     ✏️ Editar
                                 </a>
-                                <button onclick="if(confirm('¿Eliminar esta habitación?')) window.location.href='<?= BASE_URL ?>/hotel/habitaciones/delete?id=<?= $room["id"] ?>'" style="background: #fee2e2; color: #991b1b;">
-                                    🗑️ Eliminar
-                                </button>
+                                <form method="POST" action="<?= BASE_URL ?>/hotel/habitaciones/delete" onsubmit="return confirm('¿Eliminar esta habitación?')" style="margin: 0;">
+                                    <input type="hidden" name="id" value="<?= (int)$room["id"] ?>">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                    <button type="submit" style="background: #fee2e2; color: #991b1b; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-weight: 600;">
+                                        🗑️ Eliminar
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>

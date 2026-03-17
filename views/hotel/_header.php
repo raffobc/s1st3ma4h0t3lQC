@@ -7,6 +7,11 @@
     <link rel="stylesheet" href="<?= BASE_URL ?>/css/hotel-admin.css">
 </head>
 <body>
+    <?php
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    ?>
     <?php $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: ''; ?>
     <nav class="navbar">
         <div class="navbar-brand">

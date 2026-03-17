@@ -13,6 +13,12 @@ class HotelRoomsController {
             exit;
         }
     }
+
+    private function isValidCsrfToken(?string $token): bool {
+        return !empty($token)
+            && !empty($_SESSION['csrf_token'])
+            && hash_equals($_SESSION['csrf_token'], $token);
+    }
     
     public function index() {
         $stmt = $this->hotelDb->query("
@@ -88,7 +94,18 @@ class HotelRoomsController {
     }
 
     public function delete() {
-        $id = $_GET["id"] ?? 0;
+        if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+            header("Location: " . BASE_URL . "/hotel/habitaciones?error=metodo");
+            exit;
+        }
+
+        $id = (int)($_POST["id"] ?? 0);
+        $csrfToken = $_POST['csrf_token'] ?? null;
+
+        if (!$this->isValidCsrfToken($csrfToken)) {
+            header("Location: " . BASE_URL . "/hotel/habitaciones?error=csrf");
+            exit;
+        }
 
         if (!$id) {
             header("Location: " . BASE_URL . "/hotel/habitaciones");

@@ -82,7 +82,7 @@ $pdo->exec("
         tipo VARCHAR(50) NOT NULL,
         capacidad INT NOT NULL,
         precio_noche DECIMAL(10,2) NOT NULL,
-        estado VARCHAR(50) DEFAULT 'disponible',
+        estado ENUM('disponible','ocupada','reservada','limpieza','mantenimiento') DEFAULT 'disponible',
         descripcion TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -143,13 +143,20 @@ $pdo->exec("
         fecha_checkin DATETIME NULL,
         fecha_checkout DATETIME NULL,
         adelanto DECIMAL(10,2) DEFAULT 0.00,
-        estado VARCHAR(50) DEFAULT 'reservada',
+        estado ENUM('reservada','ocupada','finalizada','cancelada') DEFAULT 'reservada',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (cliente_id) REFERENCES clientes(id),
         FOREIGN KEY (habitacion_id) REFERENCES habitaciones(id)
     )
 ");
+
+    // Normalizar y reforzar estados para instalaciones existentes
+    $pdo->exec("UPDATE habitaciones SET estado = 'disponible' WHERE estado NOT IN ('disponible','ocupada','reservada','limpieza','mantenimiento') OR estado IS NULL OR estado = ''");
+    $pdo->exec("ALTER TABLE habitaciones MODIFY estado ENUM('disponible','ocupada','reservada','limpieza','mantenimiento') NOT NULL DEFAULT 'disponible'");
+
+    $pdo->exec("UPDATE reservas SET estado = 'reservada' WHERE estado NOT IN ('reservada','ocupada','finalizada','cancelada') OR estado IS NULL OR estado = ''");
+    $pdo->exec("ALTER TABLE reservas MODIFY estado ENUM('reservada','ocupada','finalizada','cancelada') NOT NULL DEFAULT 'reservada'");
 
 // Crear tabla pagos
 $pdo->exec("

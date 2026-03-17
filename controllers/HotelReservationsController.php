@@ -72,6 +72,11 @@ class HotelReservationsController {
                 exit;
             }
 
+            if (!$this->isRoomAvailableForReservation($habitacionId, $fechaEntrada, $fechaSalida, null)) {
+                header("Location: " . BASE_URL . "/hotel/reservas/create?error=disponibilidad");
+                exit;
+            }
+
             $earlyCheckIn = isset($_POST["early_checkin"]) ? 1 : 0;
             $lateCheckOut = isset($_POST["late_checkout"]) ? 1 : 0;
 
@@ -151,6 +156,11 @@ class HotelReservationsController {
 
             if ($clienteId <= 0 || $habitacionId <= 0 || $fechaEntrada === '' || $fechaSalida === '') {
                 header("Location: " . BASE_URL . "/hotel/reservas/edit?id=" . $id . "&error=datos");
+                exit;
+            }
+
+            if (!$this->isRoomAvailableForReservation($habitacionId, $fechaEntrada, $fechaSalida, $id)) {
+                header("Location: " . BASE_URL . "/hotel/reservas/edit?id=" . $id . "&error=disponibilidad");
                 exit;
             }
 
@@ -305,6 +315,10 @@ class HotelReservationsController {
             $cargoExtra = $lateCheckOut ? $this->cargoLateCheckOut : 0;
             $total = $this->calculateReservationTotal($habitacionId, $fechaEntrada, $fechaSalida, 0, $lateCheckOut);
 
+            if (!$this->isRoomAvailableForReservation($habitacionId, $fechaEntrada, $fechaSalida, null)) {
+                throw new Exception('La habitacion ya no esta disponible para ese rango.');
+            }
+
             $stmt = $this->hotelDb->prepare(" 
                 INSERT INTO reservas (
                     cliente_id, habitacion_id, fecha_entrada, hora_entrada,
@@ -377,6 +391,10 @@ class HotelReservationsController {
 
             if (!$reservation) {
                 throw new Exception('Reserva no encontrada');
+            }
+
+            if (!$this->isValidStatusTransition((string)$reservation['estado'], $nuevoEstado)) {
+                throw new Exception('Transicion de estado no permitida');
             }
 
             $stmt = $this->hotelDb->prepare("UPDATE reservas SET estado = ? WHERE id = ?");
@@ -534,6 +552,75 @@ class HotelReservationsController {
         ]);
 
         return $stmt->fetchAll();
+    }
+
+    private function isRoomAvailableForReservation(int $habitacionId, string $fechaEntrada, string $fechaSalida, ?int $excludeReservationId): bool {
+        $sql = "
+            SELECT COUNT(*) AS total
+            FROM reservas r
+            JOIN habitaciones h ON h.id = r.habitacion_id
+            WHERE r.habitacion_id = ?
+              AND r.estado IN ('reservada', 'ocupada')
+              AND h.estado <> 'mantenimiento'
+              AND (
+                    (r.fecha_entrada <= ? AND r.fecha_salida >= ?)
+                    OR (r.fecha_entrada <= ? AND r.fecha_salida >= ?)
+                    OR (r.fecha_entrada >= ? AND r.fecha_salida <= ?)
+              )
+        ";
+
+        $params = [
+            $habitacionId,
+            $fechaEntrada,
+            $fechaEntrada,
+            $fechaSalida,
+            $fechaSalida,
+            $fechaEntrada,
+            $fechaSalida,
+        ];
+
+        if ($excludeReservationId !== null) {
+            $sql .= " AND r.id <> ?";
+            $params[] = $excludeReservationId;
+        }
+
+        $stmt = $this->hotelDb->prepare($sql);
+        $stmt->execute($params);
+        $overlaps = (int)($stmt->fetch()['total'] ?? 0);
+
+        if ($overlaps > 0) {
+            return false;
+        }
+
+        $stmt = $this->hotelDb->prepare("SELECT estado FROM habitaciones WHERE id = ? LIMIT 1");
+        $stmt->execute([$habitacionId]);
+        $room = $stmt->fetch();
+
+        if (!$room) {
+            return false;
+        }
+
+        return (string)$room['estado'] !== 'mantenimiento';
+    }
+
+    private function isValidStatusTransition(string $currentStatus, string $newStatus): bool {
+        $allowedStatuses = ['reservada', 'ocupada', 'finalizada', 'cancelada'];
+        if (!in_array($newStatus, $allowedStatuses, true)) {
+            return false;
+        }
+
+        if ($currentStatus === $newStatus) {
+            return true;
+        }
+
+        $transitions = [
+            'reservada' => ['ocupada', 'cancelada'],
+            'ocupada' => ['finalizada', 'cancelada'],
+            'finalizada' => [],
+            'cancelada' => [],
+        ];
+
+        return in_array($newStatus, $transitions[$currentStatus] ?? [], true);
     }
 
     private function getScheduleConfig(): array {
