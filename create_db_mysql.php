@@ -19,6 +19,61 @@ $pdo->exec("
     )
 ");
 
+// Crear tabla super_usuarios (acceso SuperAdmin)
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS super_usuarios (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        nombre VARCHAR(100) NOT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        activo TINYINT DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+");
+
+// Crear tabla hoteles (catálogo maestro)
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS hoteles (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        nombre VARCHAR(150) NOT NULL,
+        razon_social VARCHAR(200) NOT NULL,
+        ruc VARCHAR(20) UNIQUE NOT NULL,
+        direccion VARCHAR(255),
+        telefono VARCHAR(30),
+        email VARCHAR(100),
+        ciudad VARCHAR(100),
+        pais VARCHAR(100) DEFAULT 'Peru',
+        db_name VARCHAR(100),
+        db_host VARCHAR(100),
+        db_user VARCHAR(100),
+        db_password VARCHAR(255),
+        estado VARCHAR(20) DEFAULT 'activo',
+        plan VARCHAR(30) DEFAULT 'basico',
+        max_habitaciones INT DEFAULT 50,
+        fecha_registro DATE,
+        fecha_vencimiento DATE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+");
+
+// Crear tabla hotel_administradores
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS hotel_administradores (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        hotel_id INT NOT NULL,
+        nombre VARCHAR(120) NOT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        telefono VARCHAR(30),
+        activo TINYINT DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (hotel_id) REFERENCES hoteles(id) ON DELETE CASCADE
+    )
+");
+
 // Crear tabla habitaciones
 $pdo->exec("
     CREATE TABLE IF NOT EXISTS habitaciones (
@@ -169,6 +224,16 @@ $stmt->execute([
     1
 ]);
 
+// Insertar usuario super admin por defecto
+$stmt = $pdo->prepare("INSERT IGNORE INTO super_usuarios (nombre, email, password, activo) VALUES (?, ?, ?, ?)");
+$stmt->execute([
+    'Super Admin',
+    'super@hotel.com',
+    password_hash('Super123!', PASSWORD_BCRYPT),
+    1
+]);
+
 echo "✅ Base de datos y tablas creadas exitosamente\n";
 echo "✅ Usuario admin creado: admin@hotel.com / admin123\n";
+echo "✅ Super admin creado: super@hotel.com / Super123!\n";
 ?>
