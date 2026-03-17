@@ -22,7 +22,7 @@ class HotelClientsController {
                    COUNT(DISTINCT r.id) as total_reservas,
                    COALESCE(SUM(p.monto), 0) as total_gastado
             FROM clientes c
-            LEFT JOIN reservas r ON c.id = r.cliente_id
+            INNER JOIN reservas r ON c.id = r.cliente_id
             LEFT JOIN pagos p ON r.id = p.reserva_id
         ";
         
@@ -136,6 +136,8 @@ class HotelClientsController {
             exit;
         }
 
+        $this->ensureDniLookupTableExists();
+
         $stmt = $this->hotelDb->prepare("SELECT id, nombre, documento, email, telefono, ciudad, pais FROM clientes WHERE documento = ? LIMIT 1");
         $stmt->execute([$documento]);
         $client = $stmt->fetch();
@@ -150,15 +152,26 @@ class HotelClientsController {
             exit;
         }
 
+        $lookup = $this->findDniLookup($documento);
+        if ($lookup) {
+            echo json_encode([
+                'success' => true,
+                'found' => true,
+                'source' => 'cache',
+                'cliente' => $lookup
+            ]);
+            exit;
+        }
+
         $dni = preg_replace('/\D+/', '', $documento);
         if (strlen($dni) === 8 && APIPERU_TOKEN !== '') {
             $apiData = $this->lookupDniFromApi($dni);
             if ($apiData) {
-                $cachedClient = $this->saveApiClientToLocal($dni, $apiData['nombre']);
+                $cachedClient = $this->saveDniLookup($dni, $apiData['nombre']);
                 echo json_encode([
                     'success' => true,
                     'found' => true,
-                    'source' => 'local',
+                    'source' => 'api',
                     'cliente' => $cachedClient
                 ]);
                 exit;
@@ -232,26 +245,44 @@ class HotelClientsController {
         ];
     }
 
-    private function saveApiClientToLocal(string $dni, string $nombre): array {
-        // Avoid duplicate records when the same DNI is queried multiple times.
-        $stmt = $this->hotelDb->prepare("SELECT id, nombre, documento, email, telefono, ciudad, pais FROM clientes WHERE documento = ? LIMIT 1");
-        $stmt->execute([$dni]);
-        $existing = $stmt->fetch();
+    private function ensureDniLookupTableExists(): void {
+        $this->hotelDb->exec("\n            CREATE TABLE IF NOT EXISTS consultas_dni (\n                id INT PRIMARY KEY AUTO_INCREMENT,\n                documento VARCHAR(50) UNIQUE NOT NULL,\n                nombre VARCHAR(150) NOT NULL,\n                email VARCHAR(100) NULL,\n                telefono VARCHAR(20) NULL,\n                ciudad VARCHAR(100) NULL,\n                pais VARCHAR(100) NULL,\n                fuente VARCHAR(30) DEFAULT 'api',\n                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP\n            )\n        ");
+    }
+
+    private function findDniLookup(string $documento): ?array {
+        $stmt = $this->hotelDb->prepare("SELECT nombre, documento, email, telefono, ciudad, pais FROM consultas_dni WHERE documento = ? LIMIT 1");
+        $stmt->execute([$documento]);
+        $lookup = $stmt->fetch();
+
+        if (!$lookup) {
+            return null;
+        }
+
+        return [
+            'id' => null,
+            'nombre' => $lookup['nombre'] ?? '',
+            'documento' => $lookup['documento'] ?? $documento,
+            'email' => $lookup['email'] ?? null,
+            'telefono' => $lookup['telefono'] ?? null,
+            'ciudad' => $lookup['ciudad'] ?? null,
+            'pais' => $lookup['pais'] ?? 'Peru'
+        ];
+    }
+
+    private function saveDniLookup(string $dni, string $nombre): array {
+        $existing = $this->findDniLookup($dni);
         if ($existing) {
             return $existing;
         }
 
         try {
-            $stmt = $this->hotelDb->prepare("INSERT INTO clientes (nombre, documento, pais) VALUES (?, ?, ?)");
-            $stmt->execute([$nombre, $dni, 'Peru']);
+            $stmt = $this->hotelDb->prepare("INSERT INTO consultas_dni (documento, nombre, pais, fuente) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$dni, $nombre, 'Peru', 'api']);
         } catch (PDOException $e) {
             // In case of race condition on UNIQUE(documento), read the existing record.
         }
 
-        $stmt = $this->hotelDb->prepare("SELECT id, nombre, documento, email, telefono, ciudad, pais FROM clientes WHERE documento = ? LIMIT 1");
-        $stmt->execute([$dni]);
-        $saved = $stmt->fetch();
-
+        $saved = $this->findDniLookup($dni);
         if ($saved) {
             return $saved;
         }

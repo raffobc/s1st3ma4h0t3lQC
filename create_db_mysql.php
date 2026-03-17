@@ -51,6 +51,22 @@ $pdo->exec("
     )
 ");
 
+// Crear tabla consultas_dni (cache interno de búsquedas por DNI)
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS consultas_dni (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        documento VARCHAR(50) UNIQUE NOT NULL,
+        nombre VARCHAR(150) NOT NULL,
+        email VARCHAR(100),
+        telefono VARCHAR(20),
+        ciudad VARCHAR(100),
+        pais VARCHAR(100),
+        fuente VARCHAR(30) DEFAULT 'api',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+");
+
 // Crear tabla reservas
 $pdo->exec("
     CREATE TABLE IF NOT EXISTS reservas (
