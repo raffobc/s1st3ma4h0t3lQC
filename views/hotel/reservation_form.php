@@ -489,16 +489,17 @@ include BASE_PATH . "/views/hotel/_header.php";
                     
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">Nombre Completo *</label>
-                            <input type="text" name="nombre" id="clienteNombre" class="form-control" 
-                                   required placeholder="Juan Pérez García">
+                            <label class="form-label">Documento (DNI) *</label>
+                            <input type="text" name="documento" id="clienteDocumento" class="form-control" 
+                                   required placeholder="DNI, Pasaporte"
+                                   onblur="buscarClientePorDocumentoReserva()">
+                            <small id="clienteDocumentoHint" class="form-help"></small>
                         </div>
                         
                         <div class="form-group">
-                            <label class="form-label">Documento *</label>
-                            <input type="text" name="documento" id="clienteDocumento" class="form-control" 
-                                   required placeholder="DNI, Pasaporte">
-                            <small id="clienteDocumentoHint" class="form-help"></small>
+                            <label class="form-label">Nombre Completo *</label>
+                            <input type="text" name="nombre" id="clienteNombre" class="form-control" 
+                                   required placeholder="Juan Pérez García">
                         </div>
                     </div>
                     

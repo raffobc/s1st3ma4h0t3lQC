@@ -147,16 +147,17 @@
                             <input type="hidden" name="cliente_id" id="clienteIdNuevoFlag" value="new">
                             <div class="form-grid">
                                 <div class="form-group">
-                                    <label class="form-label">Nombre Completo *</label>
-                                    <input type="text" name="cliente_nombre" id="clienteNombre" 
-                                           class="form-control" placeholder="Juan Pérez">
+                                    <label class="form-label">Documento (DNI) *</label>
+                                    <input type="text" name="cliente_documento" id="clienteDocumento" 
+                                           class="form-control" placeholder="DNI o Pasaporte"
+                                           onblur="buscarClientePorDocumentoWalkin()">
+                                    <small id="clienteDocumentoWalkinHint" style="display:block; margin-top:6px; color:#6b7280;"></small>
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label class="form-label">Documento *</label>
-                                    <input type="text" name="cliente_documento" id="clienteDocumento" 
-                                           class="form-control" placeholder="DNI o Pasaporte">
-                                    <small id="clienteDocumentoWalkinHint" style="display:block; margin-top:6px; color:#6b7280;"></small>
+                                    <label class="form-label">Nombre Completo *</label>
+                                    <input type="text" name="cliente_nombre" id="clienteNombre" 
+                                           class="form-control" placeholder="Juan Pérez">
                                 </div>
                             </div>
                             
