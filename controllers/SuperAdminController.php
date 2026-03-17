@@ -23,6 +23,7 @@ class SuperAdminController {
             $user = $this->superUserModel->authenticate($email, $password);
             
             if ($user) {
+                session_regenerate_id(true);
                 $_SESSION["super_user_id"] = $user["id"];
                 $_SESSION["super_user_name"] = $user["nombre"];
                 $_SESSION["super_user_email"] = $user["email"];
@@ -86,6 +87,11 @@ class SuperAdminController {
     }
     
     public function logout(): void {
+        $_SESSION = [];
+        if (ini_get('session.use_cookies')) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], (bool)$params['secure'], (bool)$params['httponly']);
+        }
         session_destroy();
         header("Location: " . BASE_URL . "/super/login");
         exit;

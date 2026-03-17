@@ -17,6 +17,7 @@ class HotelAuthController {
             $user = $stmt->fetch();
 
             if ($user && password_verify($password, $user["password"])) {
+                session_regenerate_id(true);
                 // Configurar sesión para el hotel local
                 $_SESSION["hotel_user_id"] = $user["id"];
                 $_SESSION["hotel_user_name"] = $user["nombre"];
@@ -45,6 +46,11 @@ class HotelAuthController {
     }
     
     public function logout(): void {
+        $_SESSION = [];
+        if (ini_get('session.use_cookies')) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], (bool)$params['secure'], (bool)$params['httponly']);
+        }
         session_destroy();
         header("Location: " . BASE_URL . "/hotel/login");
         exit;
