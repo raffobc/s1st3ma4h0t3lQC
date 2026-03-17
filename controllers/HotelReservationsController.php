@@ -1,6 +1,16 @@
 <?php
 class HotelReservationsController {
     private $hotelDb;
+    private array $metodosPagoPeru = [
+        'efectivo',
+        'yape',
+        'plin',
+        'tarjeta_debito',
+        'tarjeta_credito',
+        'transferencia_bancaria',
+        'deposito_bancario',
+        'billetera_digital',
+    ];
 
     private $horaCheckInEstandar = '15:00:00';
     private $horaCheckOutEstandar = '12:00:00';
@@ -391,7 +401,7 @@ class HotelReservationsController {
                 $pendiente = max(0, $totalReserva - $pagado);
 
                 if ($pendiente > 0) {
-                    $metodoPago = $_POST["metodo_pago"] ?? "efectivo";
+                    $metodoPago = $this->normalizePaymentMethod($_POST["metodo_pago"] ?? "efectivo");
                     $comprobante = $this->generateVoucherCode($id);
 
                     $stmt = $this->hotelDb->prepare(" 
@@ -567,6 +577,15 @@ class HotelReservationsController {
 
     private function generateVoucherCode(int $reservationId): string {
         return 'TKT-' . date('Ymd-His') . '-' . str_pad((string)$reservationId, 4, '0', STR_PAD_LEFT);
+    }
+
+    private function normalizePaymentMethod(string $method): string {
+        $method = trim(strtolower($method));
+        if (!in_array($method, $this->metodosPagoPeru, true)) {
+            return 'efectivo';
+        }
+
+        return $method;
     }
 }
 ?>

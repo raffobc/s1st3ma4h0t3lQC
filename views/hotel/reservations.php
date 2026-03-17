@@ -773,7 +773,7 @@
                                 <?php endif; ?>
 
                                 <?php if ($reserva['estado'] === 'ocupada'): ?>
-                                    <button onclick="cambiarEstado(<?= $reserva['id'] ?>, 'finalizada')"
+                                    <button onclick="abrirCheckoutModal(<?= $reserva['id'] ?>)"
                                             style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: white;">
                                         🏁 Check-out
                                     </button>
@@ -855,9 +855,41 @@
         </div>
     </div>
 
+    <div id="checkoutModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>🏁 Confirmar Check-out</h2>
+                <button onclick="cerrarCheckoutModal()" class="btn-close">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 16px; color: #374151;">Selecciona el metodo de pago para cerrar la reserva y generar el recibo.</p>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="metodoPagoCheckout">Metodo de pago</label>
+                    <select id="metodoPagoCheckout" class="form-control">
+                        <option value="efectivo">Efectivo</option>
+                        <option value="yape">Yape</option>
+                        <option value="plin">Plin</option>
+                        <option value="tarjeta_debito">Tarjeta de debito</option>
+                        <option value="tarjeta_credito">Tarjeta de credito</option>
+                        <option value="transferencia_bancaria">Transferencia bancaria</option>
+                        <option value="deposito_bancario">Deposito bancario</option>
+                        <option value="billetera_digital">Billetera digital</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" onclick="confirmarCheckout()" style="flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 700; background: #2563eb; color: white; cursor: pointer;">Confirmar y emitir recibo</button>
+                    <button type="button" onclick="cerrarCheckoutModal()" style="flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 700; background: #e5e7eb; color: #111827; cursor: pointer;">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <form id="statusForm" method="POST" action="<?= BASE_URL ?>/hotel/reservas/update-status" style="display: none;">
         <input type="hidden" name="reservation_id" id="reservationId">
         <input type="hidden" name="nuevo_estado" id="nuevoEstado">
+        <input type="hidden" name="metodo_pago" id="metodoPagoHidden" value="efectivo">
     </form>
 
     <script>
@@ -978,9 +1010,28 @@
             }
         }
 
+        function abrirCheckoutModal(reservaId) {
+            document.getElementById('reservationId').value = reservaId;
+            document.getElementById('checkoutModal').style.display = 'flex';
+        }
+
+        function cerrarCheckoutModal() {
+            document.getElementById('checkoutModal').style.display = 'none';
+        }
+
+        function confirmarCheckout() {
+            const metodoPago = document.getElementById('metodoPagoCheckout').value;
+            document.getElementById('nuevoEstado').value = 'finalizada';
+            document.getElementById('metodoPagoHidden').value = metodoPago || 'efectivo';
+            document.getElementById('statusForm').submit();
+        }
+
         function cambiarEstado(reservaId, nuevoEstado) {
             document.getElementById('reservationId').value = reservaId;
             document.getElementById('nuevoEstado').value = nuevoEstado;
+            if (nuevoEstado !== 'finalizada') {
+                document.getElementById('metodoPagoHidden').value = 'efectivo';
+            }
             document.getElementById('statusForm').submit();
         }
 
@@ -989,6 +1040,11 @@
             const modal = document.getElementById('checkinModal');
             if (event.target === modal) {
                 cerrarModalCheckin();
+            }
+
+            const checkoutModal = document.getElementById('checkoutModal');
+            if (event.target === checkoutModal) {
+                cerrarCheckoutModal();
             }
         });
     </script>
