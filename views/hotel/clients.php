@@ -330,6 +330,7 @@
         </div>
         <div class="navbar-user">
             <span>👤 <?= htmlspecialchars($_SESSION["hotel_user_name"] ?? 'Usuario') ?></span>
+            <a href="<?= BASE_URL ?>/hotel/password" class="btn-logout" style="background:#2563eb;">Cambiar Clave</a>
             <a href="<?= BASE_URL ?>/hotel/logout" class="btn-logout">Cerrar Sesión</a>
         </div>
     </nav>
