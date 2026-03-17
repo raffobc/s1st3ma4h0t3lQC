@@ -29,11 +29,12 @@
                 <label class="form-label">Documento de Identidad (DNI) *</label>
                 <input type="text" name="documento" id="documentoInput" class="form-control" required placeholder="DNI, Pasaporte"
                        autofocus value="<?= htmlspecialchars($client['documento'] ?? '') ?>">
+                <small id="dniHint" style="display:block; margin-top:6px; color:#6b7280;"></small>
             </div>
             
             <div class="form-group">
                 <label class="form-label">Nombre Completo *</label>
-                <input type="text" name="nombre" class="form-control" required placeholder="Juan Pérez García"
+                <input type="text" name="nombre" id="nombreInput" class="form-control" required placeholder="Juan Pérez García"
                        value="<?= htmlspecialchars($client['nombre'] ?? '') ?>">
             </div>
         </div>
@@ -87,3 +88,40 @@
 </style>
 
 <?php include BASE_PATH . "/views/hotel/_footer.php"; ?>
+
+<script>
+document.getElementById('documentoInput').addEventListener('blur', function () {
+    const doc = this.value.trim();
+    if (doc.length < 6) return;
+
+    const hint = document.getElementById('dniHint');
+    hint.textContent = 'Buscando...';
+    hint.style.color = '#6b7280';
+
+    fetch('<?= BASE_URL ?>/hotel/clientes/find-by-document?documento=' + encodeURIComponent(doc))
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success || !data.found || !data.cliente) {
+                hint.textContent = 'DNI no encontrado. Completa los datos manualmente.';
+                hint.style.color = '#6b7280';
+                return;
+            }
+            const c = data.cliente;
+            const nombreInput = document.getElementById('nombreInput');
+            if (nombreInput && !nombreInput.value) nombreInput.value = c.nombre || '';
+            const emailInput = document.querySelector('input[name="email"]');
+            if (emailInput && !emailInput.value) emailInput.value = c.email || '';
+            const telefonoInput = document.querySelector('input[name="telefono"]');
+            if (telefonoInput && !telefonoInput.value) telefonoInput.value = c.telefono || '';
+            hint.textContent = data.source === 'local'
+                ? '✅ Cliente encontrado en la base de datos local.'
+                : '✅ Datos cargados desde RENIEC. Verifica y completa.';
+            hint.style.color = '#059669';
+            setTimeout(() => nombreInput?.focus(), 50);
+        })
+        .catch(() => {
+            hint.textContent = 'No se pudo consultar el DNI ahora.';
+            hint.style.color = '#6b7280';
+        });
+});
+</script>
